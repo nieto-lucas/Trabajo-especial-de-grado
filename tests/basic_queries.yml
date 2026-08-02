@@ -1,0 +1,102 @@
+- name: generic_all_nodes
+  joern: cpg.all
+  cypher: MATCH (n) RETURN n;
+
+- name: generic_all_literal_nodes
+  joern: cpg.literal
+  cypher: MATCH (n:LITERAL) RETURN n;
+
+- name: generic_all_block_nodes
+  joern: cpg.block
+  cypher: MATCH (n:BLOCK) RETURN n;
+
+- name: generic_all_identifier_nodes
+  joern: cpg.identifier
+  cypher: MATCH (n:IDENTIFIER) RETURN n;
+
+- name: generic_all_method_nodes
+  joern: cpg.method
+  cypher: MATCH (n:METHOD) RETURN n;
+
+- name: generic_all_method_return_nodes
+  joern: cpg.methodReturn
+  cypher: MATCH (n:METHOD_RETURN) RETURN n;
+
+- name: generic_all_method_paramIn_nodes
+  joern: cpg.methodParameterIn
+  cypher: MATCH (n:METHOD_PARAMETER_IN) RETURN n;
+
+- name: generic_all_method_paramOut_nodes
+  joern: cpg.methodParameterOut
+  cypher: MATCH (n:METHOD_PARAMETER_OUT) RETURN n;
+
+- name: generic_all_method_ref_nodes
+  joern: cpg.methodRef
+  cypher: MATCH (n:METHOD_REF) RETURN n;
+
+- name: generic_all_control_struct_nodes
+  joern: cpg.controlStructure
+  cypher: MATCH (n:CONTROL_STRUCTURE) RETURN n;
+
+- name: generic_all_namespace_nodes
+  joern: cpg.namespace
+  cypher: MATCH (n:NAMESPACE) RETURN n;
+
+- name: generic_all_namespaceBlock_nodes
+  joern: cpg.namespaceBlock
+  cypher: MATCH (n:NAMESPACE_BLOCK) RETURN n;
+
+- name: generic_all_binding_nodes
+  joern: cpg.binding
+  cypher: MATCH (n:BINDING) RETURN n;
+
+- name: generic_all_file_node
+  joern: cpg.file
+  cypher: MATCH (n:FILE) RETURN n;
+
+- name: generic_all_call_nodes
+  joern: cpg.call
+  cypher: MATCH (n:CALL) RETURN n;
+
+- name: generic_all_type_nodes
+  joern: cpg.typ
+  cypher: MATCH (n:TYPE) RETURN n;
+
+- name: generic_all_typeDecl_nodes
+  joern: cpg.typeDecl
+  cypher: MATCH (n:TYPE_DECL) RETURN n;
+
+- name: generic_all_local_nodes
+  joern: cpg.local
+  cypher: MATCH (n:LOCAL) RETURN n;
+
+- name: generic_all_return_nodes
+  joern: cpg.ret
+  cypher: MATCH (n:RETURN) RETURN n;
+
+# Problema:
+#
+# No pude imitar cpg.cfgNode directamente, así que termine tratando de imitar Cypher
+# desde Joern. El problema radica en que Joern considera como nodos CFG algunos completamente
+# aislados
+#
+# Por ejemplo, con el archivo "foo.c":
+#
+# `cpg.cfgNode.filter(n => n.cfgNext.isEmpty && n.cfgPrev.isEmpty).length` da un total de 
+# 29 nodos aislados que Joern clasifica internamente como parte del CFG
+#
+- name: generic_all_cfg_nodes
+  joern: cpg.all.filter(n => n.outE("CFG").hasNext || n.inE("CFG").hasNext)
+  cypher: MATCH (n)-[r:CFG]->(m) RETURN n, m;
+
+- name: generic_all_ast_nodes
+  joern: cpg.astNode
+  cypher: MATCH (n)-[r:AST]->(m) RETURN n, m;
+
+- name: generic_methods_with_param_count_1
+  joern: cpg.method.filter(_.parameter.size == 1)
+  cypher: >
+    MATCH (n:METHOD)-[:AST]->(m:METHOD_PARAMETER_IN)
+    WITH n, count(m) AS c
+    WHERE c = 1
+    RETURN n;

@@ -1,0 +1,36 @@
+==> 22 test(s) cargados de tests/basic_queries.yml
+
+==> Corriendo queries en Joern (una sola pasada) ...
+    Script generado: .joern_equiv/equiv.sc
+
+==> Corriendo queries equivalentes en Neo4j ...
+[OK] generic_all_nodes (85 nodos)
+[OK] generic_all_literal_nodes (2 nodos)
+[OK] generic_all_block_nodes (9 nodos)
+[OK] generic_all_identifier_nodes (6 nodos)
+[OK] generic_all_method_nodes (8 nodos)
+[OK] generic_all_method_return_nodes (8 nodos)
+[OK] generic_all_method_paramIn_nodes (7 nodos)
+[OK] generic_all_method_paramOut_nodes (7 nodos)
+[OK] generic_all_method_ref_nodes (3 nodos)
+[OK] generic_all_control_struct_nodes (1 nodos)
+[OK] generic_all_namespace_nodes (1 nodos)
+[OK] generic_all_namespaceBlock_nodes (3 nodos)
+[OK] generic_all_binding_nodes (3 nodos)
+[OK] generic_all_file_node (3 nodos)
+[OK] generic_all_call_nodes (6 nodos)
+[OK] generic_all_type_nodes (6 nodos)
+[OK] generic_all_typeDecl_nodes (7 nodos)
+[OK] generic_all_local_nodes (3 nodos)
+[OK] generic_all_return_nodes (1 nodos)
+[FAIL] generic_all_cfg_nodes
+    joern: 58 nodos 
+    cypher: 34 nodos
+    solo en joern: [Decimal('25769803776'), Decimal('25769803777'), Decimal('25769803778'), Decimal('25769803779'), Decimal('25769803780'), Decimal('25769803781'), Decimal('25769803782'), Decimal('25769803783'), Decimal('25769803784'), Decimal('47244640256'), Decimal('111669149696'), Decimal('111669149697'), Decimal('111669149698'), Decimal('111669149699'), Decimal('111669149700'), Decimal('111669149701'), Decimal('111669149702'), Decimal('115964116992'), Decimal('115964116993'), Decimal('115964116994'), Decimal('115964116995'), Decimal('115964116996'), Decimal('115964116997'), Decimal('115964116998')]
+[FAIL] generic_all_ast_nodes
+    joern: 75 nodos 
+    cypher: 73 nodos
+    solo en joern: [Decimal('60129542146'), Decimal('133143986176')]
+[OK] generic_methods_with_param_count_1 (1 nodos)
+
+==> 20/22 tests OK

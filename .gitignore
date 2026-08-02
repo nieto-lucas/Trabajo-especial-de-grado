@@ -1,0 +1,9 @@
+# Entorno virutal y python
+.env
+__pycache__
+
+# Directorio default para debugin de equivalencias
+.joern_equiv
+
+# Workspace joern
+workspace
