@@ -8,7 +8,7 @@ from test_cases import TestCase
 from query import QueryResult
 
 # Template del código en Scala para ejecutar queries en Joern 
-SCALA_TEMPLATE = Template(r"""import java.io.PrintWriter
+_SCALA_TEMPLATE = Template(r"""import java.io.PrintWriter
 import scala.collection.mutable.LinkedHashMap
  
 @main def exec(cpgFile: String, outFile: String) = {
@@ -43,20 +43,20 @@ def generate_scala_script(tests: list[TestCase], out_json_path: Path) -> str:
 
     queries_block = "\n".join(lines)
 
-    return SCALA_TEMPLATE.substitute(queries_block=queries_block)
+    return _SCALA_TEMPLATE.substitute(queries_block=queries_block)
 
 def exec_all_joern_queries(
-    joern_bin: str, cpg_file: str,
+    joern_bin: Path, cpg_file: Path,
     tests: list[TestCase], debug_dir: Path
 ) -> dict[TestCase, QueryResult]:
     """Ejecuta todas las queries Joern dentro de una lista de tests (incia una JVM
     una única vez)
 
     Args:
-        joern_bin (str): Path al comando joern
-        cpg_file (str): Archivo con la representación del código como CPG
-        tests (list): Lista de tests  
-        debug_dir (Path): Directorio al que enviar el script Scala generado
+        - joern_bin (Path): Path al comando `joern`
+        - cpg_file (Path): Archivo con la representación del código como CPG
+        - tests (list): Lista de tests  
+        - debug_dir (Path): Directorio al que enviar el script Scala generado
     
     Return:
         Diccionario entre el caso de test y el resultado (ids) de cada query Joern.
@@ -66,7 +66,7 @@ def exec_all_joern_queries(
     out_path = debug_dir / "out.json"
     script_path.write_text(generate_scala_script(tests, out_path), encoding="utf-8")
     print(f'    Script generado: {script_path}')
-    # Corre Joern y ejecuta las queries del código Scala generado  
+    # Corre joern y ejecuta las queries del código Scala generado  
     cmd = [
         joern_bin, "--script", str(script_path),
         "--param", f'cpgFile={cpg_file}',
@@ -85,9 +85,9 @@ def exec_all_joern_queries(
     raw_data: dict[str, list[int]] = json.loads(out_path.read_text(encoding="utf-8"))
     by_name = {test.name: test for test in tests}
 
-    faltantes = by_name.keys() - raw_data.keys()
-    if faltantes:
-        raise RuntimeError(f"joern no devolvió resultados para: {sorted(faltantes)}")
+    missmatches = by_name.keys() - raw_data.keys()
+    if missmatches:
+        raise RuntimeError(f"joern no devolvió resultados para: {sorted(missmatches)}")
 
     return {
         by_name[name]: QueryResult.from_raw_ids(ids)

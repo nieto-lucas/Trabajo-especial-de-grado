@@ -1,8 +1,8 @@
 # Equivalencia entre Joern CODEQL y Cypher queries:
 
-Este repositorio contiene código para realizar comparaciones entre queries de Joern y Cypher
+Este repositorio contiene código y herrmientas para realizar comparaciones entre queries de Joern y Cypher
 
-## Uso:
+# Pre requisitos:
 
 1. Usar Python 3.12.3 o más nuevo, luego crear y activar un entorno virtual:
 
@@ -14,17 +14,25 @@ Este repositorio contiene código para realizar comparaciones entre queries de J
 
     ```pip install -r requirements.txt```
 
-3. Crear un archivo `tests/queries.yml` basado en el archivo `tests/basic_queries.yml`
+## Uso compare-queries:
 
-4. Levantar una conexión a Neo4J usando `neo4j console`
+1. Ir al directorio `compare_dir/`
 
-5. Correr `joern-parse <filepath> --output <cpg-bin>`
+1. Crear un archivo `tests/queries.yml` basado en el archivo `tests/basic_queries.yml`
 
-6. Correr `joern-export <cpg-bin> -repr all --format csvneo4j --out <export_dir>` para obtener la representación CPG del código sobre la que testear
+2. Usar cpg2neo4j para pasar de CPG a una DB Neo4j 
 
-7. Importar los archivos archivos `*<export_dir>/*_data.csv` y iniciar la base de datos con `cypher-shell -u <user> -p <password> <query>`
+3. Conectarse a Neo4j usando `neo4j console`
 
-8. Correr `main.py` con las opciones `--neo4j-user`, `--neo4j-password`, `--joern-bin`, etc. (para más información usar `--help`).
+4. Correr `python main.py tests/queries.yml` con las opciones `--neo4j-user`, `--neo4j-password`, `--joern-bin`, etc. (para más información usar `--help`).
+
+## Uso cpg2neo4j:
+
+1. Ir al directorio `cpg2neo4j/`
+
+2. Crear un archivo `cpg.bin` usando `joern-parse`
+
+3. Correr `python cpg2neo4j/main.py cpg.bin` con las opciones `--neo4j-admin-bin`, `--joern-export-bin`, `--export-dir`, `--database` (para más información usar `--help`).
 
 ## Dependencias:
 
@@ -35,6 +43,4 @@ Este repositorio contiene código para realizar comparaciones entre queries de J
 ## TO DO:
 
 - [] Setear la configuración para tests también desde un archivo .yml
-- [] Automatizar los puntos 5 y 6
-- [] Automatizar punto 7
 - [] Obtener los resultados completos de queries para así permitir consultas con avg, count, etc, e inclusive poder comparar aristas (ahí parece haber discrepancias entre Joern y Cypher)

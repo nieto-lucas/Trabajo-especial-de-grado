@@ -7,7 +7,6 @@ void sink(int y)
 {
 }
 
-
 void foo()
 {
 	int x = source();
@@ -17,4 +16,3 @@ void foo()
 		sink(y);
 	}
 }
-

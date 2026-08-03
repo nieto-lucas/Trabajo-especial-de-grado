@@ -1,9 +1,12 @@
 # Entorno virutal y python
 .env
-__pycache__
+*__pycache__
 
 # Directorio default para debugin de equivalencias
-.joern_equiv
+compare_queries/.joern_equiv
 
 # Workspace joern
-workspace
+compare_queries/workspace
+
+# Directorio default para exportar CPG as neo4jcsv
+cpg2neo4j/.export

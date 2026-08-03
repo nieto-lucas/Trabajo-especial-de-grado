@@ -4,7 +4,7 @@ from pathlib import Path
 from neo4j import GraphDatabase
 
 from test_cases import load_tests
-from report import cmp_cypher, print_report
+from report import cmp_cypher, create_report
 from joern import exec_all_joern_queries
 
 def main() -> None:
@@ -22,19 +22,17 @@ def main() -> None:
     tests = load_tests(args.tests_file)
     print(f"==> {len(tests)} test(s) cargados de {args.tests_file}")
 
-    print()
-    print("==> Corriendo queries en Joern (una sola pasada) ...")
+    print("\n==> Corriendo queries en Joern (una sola pasada) ...")
     joern_results = exec_all_joern_queries(args.joern_bin, args.cpg_file, tests, args.debug_dir)
 
-    print()
-    print("==> Corriendo queries equivalentes en Neo4j ...")
+    print("\n==> Corriendo queries equivalentes en Neo4j ...")
     driver = GraphDatabase.driver(args.neo4j_uri, auth=(args.neo4j_user, args.neo4j_password))
     try:
         outcomes = cmp_cypher(tests, joern_results, driver)
     finally:
         driver.close()
  
-    todo_ok = print_report(outcomes)
+    todo_ok = create_report(outcomes)
     sys.exit(0 if todo_ok else 1)
 
 if __name__ == "__main__":

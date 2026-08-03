@@ -23,14 +23,11 @@
 [OK] generic_all_typeDecl_nodes (7 nodos)
 [OK] generic_all_local_nodes (3 nodos)
 [OK] generic_all_return_nodes (1 nodos)
-[FAIL] generic_all_cfg_nodes
-    joern: 58 nodos 
-    cypher: 34 nodos
-    solo en joern: [Decimal('25769803776'), Decimal('25769803777'), Decimal('25769803778'), Decimal('25769803779'), Decimal('25769803780'), Decimal('25769803781'), Decimal('25769803782'), Decimal('25769803783'), Decimal('25769803784'), Decimal('47244640256'), Decimal('111669149696'), Decimal('111669149697'), Decimal('111669149698'), Decimal('111669149699'), Decimal('111669149700'), Decimal('111669149701'), Decimal('111669149702'), Decimal('115964116992'), Decimal('115964116993'), Decimal('115964116994'), Decimal('115964116995'), Decimal('115964116996'), Decimal('115964116997'), Decimal('115964116998')]
+[OK] generic_all_cfg_nodes (34 nodos)
 [FAIL] generic_all_ast_nodes
     joern: 75 nodos 
     cypher: 73 nodos
     solo en joern: [Decimal('60129542146'), Decimal('133143986176')]
 [OK] generic_methods_with_param_count_1 (1 nodos)
 
-==> 20/22 tests OK
+==> 21/22 tests OK

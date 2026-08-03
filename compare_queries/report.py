@@ -23,8 +23,9 @@ class TestOutCome:
     def only_on_cypher(self) -> QueryResult:
         return self.cypher_result.diff_result(self.joern_result)
 
-def cmp_cypher(tests: list[TestCase], 
-               joern_results: dict[TestCase, QueryResult], driver: Driver
+def cmp_cypher(
+    tests: list[TestCase], 
+    joern_results: dict[TestCase, QueryResult], driver: Driver
 ) -> list[TestOutCome]:
     """Compara los resultados de una query en Joern con los resultados de la query en cypher
     para el mismo tests
@@ -49,7 +50,7 @@ def cmp_cypher(tests: list[TestCase],
 
     return outcomes
 
-def print_report(outcomes: list[TestOutCome]) -> bool:
+def create_report(outcomes: list[TestOutCome]) -> bool:
     ok_tests = 0
     for outcome in outcomes:
         if outcome.passed:
