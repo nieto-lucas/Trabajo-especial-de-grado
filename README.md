@@ -2,7 +2,7 @@
 
 Este repositorio contiene código y herrmientas para realizar comparaciones entre queries de Joern y Cypher
 
-# Pre requisitos:
+## Pre requisitos:
 
 1. Usar Python 3.12.3 o más nuevo, luego crear y activar un entorno virtual:
 
@@ -14,25 +14,25 @@ Este repositorio contiene código y herrmientas para realizar comparaciones entr
 
     ```pip install -r requirements.txt```
 
-## Uso compare-queries:
+## compare-queries:
 
-1. Ir al directorio `compare_dir/`
+1. Ir al directorio `compare_queries/`
 
-1. Crear un archivo `tests/queries.yml` basado en el archivo `tests/basic_queries.yml`
+2. Crear un archivo `tests/queries.yml` basado en el archivo `tests/basic_queries.yml`
 
-2. Usar cpg2neo4j para pasar de CPG a una DB Neo4j 
+3. Usar cpg2neo4j para pasar de CPG a una DB Neo4j 
 
-3. Conectarse a Neo4j usando `neo4j console`
+4. Conectarse a Neo4j usando `neo4j console`
 
-4. Correr `python main.py tests/queries.yml` con las opciones `--neo4j-user`, `--neo4j-password`, `--joern-bin`, etc. (para más información usar `--help`).
+5. Correr `python main.py tests/queries.yml` con las opciones `--neo4j-user`, `--neo4j-password`, `--joern-bin`, etc. (para más información usar `--help`).
 
-## Uso cpg2neo4j:
+## cpg2neo4j:
 
 1. Ir al directorio `cpg2neo4j/`
 
 2. Crear un archivo `cpg.bin` usando `joern-parse`
 
-3. Correr `python cpg2neo4j/main.py cpg.bin` con las opciones `--neo4j-admin-bin`, `--joern-export-bin`, `--export-dir`, `--database` (para más información usar `--help`).
+3. Correr `python main.py cpg.bin` con las opciones `--neo4j-admin-bin`, `--joern-export-bin`, `--export-dir`, `--database` (para más información usar `--help`).
 
 ## Dependencias:
 
