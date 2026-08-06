@@ -7,21 +7,21 @@ from neo4j import Session, Driver, GraphDatabase
 # MATCH (m)-[:AST*]->(:RETURN)-[:AST]->(retExpr)
 #
 # Primer CALL: verifica que todo camino entre el parametro y la expresión
-# de retorno no ocurra ninguna asignación de literales al parametro ni que 
-# haya una asignación compuesta que involucre al parametro y si se llama a 
-# alguna función debe ser del conjunto de funciones identidad. Tampoco deben 
+# de retorno no haya una asignación compuesta que involucre al parametro y si se 
+# llama a alguna función debe ser del conjunto de funciones identidad. Tampoco deben 
 # llamarse de forma compuesta, pero si pueden ser anidadas. Por ej. f(x) + 1 NO,
 # f(f(x)), f(f(f(x))), ... SI
 #
 # Segundo CALL: obtiene la cantidad de caminos a la expresion de retorno cuya 
 # definición no esta influida por el parametro. Si la función es identidad la
 # cantidad debería ser 0. (Necesario porque el primer CALL deja pasar funciones
-# donde hay uno o más caminos y la variable que se retorna es redefinida con una 
-# expresión simple. Por ej. int s(int x) { x = 42; return x; } en la sentencia 
-# x = 42 no participa el x del parametro)
+# donde hay varios caminos y la variable que se retorna es redefinida con una expresión 
+# simple. Por ej. int s(int x) { if (cond) x = 42 else x = x; return x; } en la 
+# sentencia x = 42 no participa el x del parametro y por lo tanto el primer CALL no
+# considera el camino donde el condicional es true)
 #
 # (No detecta programas donde el parametro se reasigne o retorne en composición con 
-# algún operador que no lo modifique. Por ej. no detecta int w(x) { return x + 0 })
+# algún operador que no lo modifique. Por ej. no detecta int w(int x) { return x + 0 })
 #
 _IDENTITY_QUERY = """
 MATCH (m:METHOD)-[:AST]->(param:METHOD_PARAMETER_IN)
@@ -31,7 +31,6 @@ WITH m, param, retExpr, $identitySet AS identitySet
 CALL (param, retExpr, identitySet) {
     MATCH path = (param)-[:REACHING_DEF*1..]->(retExpr)
     WITH identitySet, collect(path) AS paths
-
     WITH paths,
         ALL(p IN paths WHERE
             ALL(n IN nodes(p) WHERE
@@ -41,29 +40,30 @@ CALL (param, retExpr, identitySet) {
                     n:CALL
                     AND n.NAME = "<operator>.assignment"
                     AND EXISTS {
-                        MATCH (n)-[:AST]->(rightSide)
-                        WHERE rightSide.ARGUMENT_INDEX = 2
-                            AND rightSide:IDENTIFIER
+                        (n)-[:AST]->(rightSideAssign)
+                        WHERE rightSideAssign.ARGUMENT_INDEX = 2
+                            AND rightSideAssign:IDENTIFIER
                     }
                 )
                 OR (
                     n:CALL
                     AND n.METHOD_FULL_NAME IN identitySet
-                    AND size([(n)-[:AST]->(a) WHERE a.ARGUMENT_INDEX = 1 | a]) = 1
+                    AND COUNT { 
+                        (n)-[:AST]->(functionArgument) 
+                        WHERE functionArgument.ARGUMENT_INDEX = 1 
+                    } = 1
                 )
             )
         ) AS allClean
-
     RETURN size(paths) > 0 AND allClean AS cleanPath
 }
 
 CALL (param, retExpr, cleanPath) {
     MATCH (otherDef)-[:REACHING_DEF]->(retExpr)
-
     WHERE otherDef <> param
         AND NOT otherDef:METHOD
         AND NOT EXISTS {
-            MATCH path = (param)-[:REACHING_DEF*1..]->(otherDef)
+            path = (param)-[:REACHING_DEF*1..]->(otherDef)
         }
     RETURN count(otherDef) AS otherDefinitions
 }

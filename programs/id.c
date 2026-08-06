@@ -122,6 +122,10 @@ int s13(int x) { /*NO ID*/
     return f(x + 1);
 }
 
+int s14(int x) { /*NO ID*/
+    return f(f(x + 1));
+}
+
 int g(int x) { /*ID*/
     return f(x);
 }
@@ -140,6 +144,11 @@ int g3(int x) { /*ID*/
 }
 
 int g4(int x) { /*ID*/
+    int y = x;
+    return f(y);
+}
+
+int g5(int x) { /*ID*/
     int y = x;
     if (cond) y = f(x);
     return y; 
