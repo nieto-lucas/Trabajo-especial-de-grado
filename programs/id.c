@@ -46,7 +46,7 @@ int f7(int x) { /*ID*/
     return x;
 }
 
-int f8(int x) {
+int f8(int x) { /*ID*/
     int y = 42;
     if (cond) y = x;
     else y = x;
