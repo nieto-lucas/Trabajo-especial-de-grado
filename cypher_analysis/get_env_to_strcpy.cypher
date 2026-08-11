@@ -1,8 +1,8 @@
-// Query para emular get-env-to-strcpy CODEQL query https://queries.joern.io/
-// Autor: @ursachec
+// Query inspirada en get-env-to-strcpy CODEQL query https://queries.joern.io/
+// CPGQL query:
 // ({
 //      def source = cpg.call.methodFullName("getenv")
-//      def sink = cpg.method.fullName("strcpy").parameter.index(2)
+//      def sink = cpg.call.methodFullName("strcpy").argument(2)
 //      sink.reachableBy(source).l
 // }).l
 // 
@@ -18,7 +18,7 @@ MERGE (r)-[:RET_TO_CALL]->(c);
 // Comunica argumentos con parametros de funciones (llamarse una vez).              //
 //////////////////////////////////////////////////////////////////////////////////////
 MATCH (c:CALL)-[:CALL]->(callee:METHOD)
-WHERE callee.is_EXTERNAL = false
+WHERE callee.IS_EXTERNAL = false
 
 MATCH (c)-[:AST]->(arg)
 WHERE arg.ARGUMENT_INDEX > 0

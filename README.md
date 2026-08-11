@@ -1,4 +1,4 @@
-# Equivalencia entre Joern CODEQL y Cypher queries:
+# Equivalencia entre Joern CPGQL y Cypher queries:
 
 Este repositorio contiene código y herrmientas para realizar comparaciones entre queries de Joern y Cypher
 

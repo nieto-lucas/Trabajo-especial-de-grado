@@ -1,6 +1,6 @@
 // Query que emula malloc-memcpy-int-overflow CODEQL query https://queries.joern.io/
 // Autor: @fabsx00
-// CODEQL query:
+// CPGQL query:
 // ({
 //      val src =
 //      cpg.method(".*malloc$").callIn.where(_.argument(1).arithmetic).l
@@ -38,7 +38,7 @@ MERGE (arg)-[:ARG_TO_PARAM]->(p);
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Obtiene las llamadas a memcpy que le llega flujo desde una llamada a malloc cuyo //
-// Emula la query CODEQL de arriba.                                                 //              
+// Emula la query CODEQL de arriba.                                                 //
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Llamadas a malloc que en su argumento tienen operaciones aritmeticas 
@@ -46,13 +46,13 @@ MATCH (sourceCall: CALL)
 WHERE sourceCall.METHOD_FULL_NAME =~ ".*malloc$"
     AND EXISTS {
         MATCH (sourceCall)-[:AST]->(sourceArg)
-            WHERE sourceArg.ARGUMENT_INDEX = 1
-                AND sourceArg.NAME IN [
-                    "<operator>.addition",
-                    "<operator>.subtraction",
-                    "<operator>.multiplication",
-                    "<operator>.division"
-                ]
+        WHERE sourceArg.ARGUMENT_INDEX = 1
+            AND sourceArg.NAME IN [
+                "<operator>.addition",
+                "<operator>.subtraction",
+                "<operator>.multiplication",
+                "<operator>.division"
+            ]
     }
 
 // (b) Llamada a memcpy donde llegan al primer argumento flujo desde malloc
