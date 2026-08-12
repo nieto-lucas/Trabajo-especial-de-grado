@@ -1,4 +1,4 @@
-// Query que emula malloc-memcpy-int-overflow CODEQL query https://queries.joern.io/
+// Query que emula malloc-memcpy-int-overflow CPGQL query https://queries.joern.io/
 // Autor: @fabsx00
 // CPGQL query:
 // ({
@@ -37,8 +37,8 @@ WHERE p.INDEX = arg.ARGUMENT_INDEX
 MERGE (arg)-[:ARG_TO_PARAM]->(p);
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Obtiene las llamadas a memcpy que le llega flujo desde una llamada a malloc cuyo //
-// Emula la query CODEQL de arriba.                                                 //
+// Obtiene las llamadas a memcpy que le llega flujo desde una llamada a malloc      //
+// Emula la query CPGQL de arriba.                                                  //
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Llamadas a malloc que en su argumento tienen operaciones aritmeticas 
