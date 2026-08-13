@@ -1,4 +1,4 @@
-// Query que emula strncpy-no-null-term CPGQL query https://queries.joern.io/
+// Query strncpy-no-null-term CPGQL query https://queries.joern.io/
 // Autor: @fabsx00
 // CPGQL query:
 // ({
@@ -44,7 +44,7 @@ MERGE (arg)-[:ARG_TO_PARAM]->(p);
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Obtiene los punteros destino en los que se compia strings con strncpy dejando    //
-// lugar para el caracter de términación. Emula la CPGQL de arriba                  //
+// lugar para el caracter de términación. Emula la query CPGQL de arriba            //
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Llamadas a malloc y strncpy

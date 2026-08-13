@@ -1,4 +1,4 @@
-// Query que emula malloc-memcpy-int-overflow CPGQL query https://queries.joern.io/
+// Query malloc-memcpy-int-overflow CPGQL query https://queries.joern.io/
 // Autor: @fabsx00
 // CPGQL query:
 // ({
