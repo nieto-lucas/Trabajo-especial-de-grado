@@ -6,7 +6,10 @@
 compare_queries/.joern_equiv
 
 # Workspace joern
-compare_queries/workspace
+*workspace
+
+.vscode
 
 # Directorio default para exportar CPG as neo4jcsv
 cpg2neo4j/.export
+
