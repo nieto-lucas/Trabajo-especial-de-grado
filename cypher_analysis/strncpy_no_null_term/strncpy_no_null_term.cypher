@@ -35,7 +35,7 @@ MERGE (r)-[:RET_TO_CALL]->(c);
 MATCH (c:CALL)-[:CALL]->(callee:METHOD)
 WHERE callee.IS_EXTERNAL = false
 
-MATCH (c)-[:AST]->(arg)
+MATCH (c)-[:ARGUMENT]->(arg)
 WHERE arg.ARGUMENT_INDEX > 0
 
 MATCH (callee)-[:AST]->(p:METHOD_PARAMETER_IN)
@@ -47,47 +47,43 @@ MERGE (arg)-[:ARG_TO_PARAM]->(p);
 // lugar para el caracter de términación. Emula la query CPGQL de arriba            //
 //////////////////////////////////////////////////////////////////////////////////////
 
-// (a) Llamadas a malloc y strncpy
-MATCH (sourceCall:CALL)
+// (a) Obtiene llamadas a malloc y strncpy
+MATCH (sourceCall:CALL)-[:ARGUMENT]->(sourceArg)
 WHERE sourceCall.METHOD_FULL_NAME =~ ".*malloc$"
+    AND sourceArg.ARGUMENT_INDEX = 1
 
-MATCH (sourceCall)-[:AST]->(sourceArg)
-WHERE sourceArg.ARGUMENT_INDEX = 1
-
-MATCH (sinkCall:CALL)
+MATCH (method:METHOD)-[:CONTAINS]->(sinkCall:CALL)
 WHERE sinkCall.METHOD_FULL_NAME =~ "(?i)strncpy"
 
 // (b) Otenemos method, dst, size
-MATCH (method:METHOD)-[:CONTAINS]->(sinkCall)
+MATCH (sinkCall)-[:ARGUMENT]->(dstArg)
+WHERE dstArg.ARGUMENT_INDEX = 1
 
-MATCH (sinkCall)-[:AST]->(firstSinkArg)
-WHERE firstSinkArg.ARGUMENT_INDEX = 1
+MATCH (sinkCall)-[:ARGUMENT]->(sizeArg)
+WHERE sizeArg.ARGUMENT_INDEX = 3
 
-MATCH (sinkCall)-[:AST]->(thridSinkArg)
-WHERE thridSinkArg.ARGUMENT_INDEX = 3
-
-WITH sourceArg, method, firstSinkArg AS dst, thridSinkArg AS size
+WITH method, dstArg, sizeArg
 
 // (c) El tamaño reservado al string que se copia es el mismo que lo copiado y no 
 // se agregan caracteres de términcación en la copia
 WHERE EXISTS {
-        MATCH (sourceArg)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(dst)
-        WHERE sourceArg.CODE = size.CODE
+        MATCH (sourceArg)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(dstArg)
+        WHERE sourceArg.CODE = sizeArg.CODE
     }
     // NINGUNA asignación dentro de la función donde se llama a strncpy es de
-    // la forma: dst[some_size] = '\0'  
+    // la forma: dst[some_size] = '\0'
     AND NOT EXISTS {
-        MATCH (method)-[:CONTAINS]->(methodAssignment)
+        MATCH (method)-[:CONTAINS]->(methodAssignment:CALL)
         WHERE methodAssignment.NAME = "<operator>.assignment"
-        
-        MATCH (methodAssignment)-[:AST]->(target)
+    
+        MATCH (methodAssignment)-[:AST]->(target:CALL)
         WHERE target.ARGUMENT_INDEX = 1
             AND target.NAME = "<operator>.indirectIndexAccess"
-            AND target.CODE =~ (dst.CODE + ".*\\[.*")
+            AND target.CODE =~ (dstArg.CODE + ".*\\[.*")
     
         MATCH (methodAssignment)-[:AST]->(source:LITERAL)
         WHERE source.ARGUMENT_INDEX = 2
             AND source.CODE =~ ".*0.*"
     }
 
-RETURN DISTINCT dst;
+RETURN DISTINCT dstArg;

@@ -13,3 +13,5 @@ compare_queries/.joern_equiv
 # Directorio default para exportar CPG as neo4jcsv
 cpg2neo4j/.export
 
+# Base de datos de grafo CPG generadas con joern-export
+.cpgs

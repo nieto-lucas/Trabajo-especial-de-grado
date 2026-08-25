@@ -1,4 +1,4 @@
-// Query inspirada en get-env-to-strcpy CODEQL query https://queries.joern.io/
+// Query inspirada en get-env-to-strcpy CPGQL query https://queries.joern.io/
 // CPGQL query:
 // ({
 //      def source = cpg.call.methodFullName("getenv")
@@ -20,7 +20,7 @@ MERGE (r)-[:RET_TO_CALL]->(c);
 MATCH (c:CALL)-[:CALL]->(callee:METHOD)
 WHERE callee.IS_EXTERNAL = false
 
-MATCH (c)-[:AST]->(arg)
+MATCH (c)-[:ARGUMENT]->(arg)
 WHERE arg.ARGUMENT_INDEX > 0
 
 MATCH (callee)-[:AST]->(p:METHOD_PARAMETER_IN)
@@ -34,7 +34,7 @@ MERGE (arg)-[:ARG_TO_PARAM]->(p);
 MATCH (sourceCall: CALL)
 WHERE sourceCall.METHOD_FULL_NAME = "getenv"
 
-MATCH (sinkCall: CALL)-[:AST]->(sinkArg)
+MATCH (sinkCall: CALL)-[:ARGUMENT]->(sinkArg)
 WHERE sinkCall.METHOD_FULL_NAME = "strcpy"
     AND sinkArg.ARGUMENT_INDEX = 2
     AND EXISTS {

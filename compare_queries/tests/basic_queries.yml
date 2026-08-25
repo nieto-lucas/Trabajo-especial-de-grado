@@ -86,12 +86,22 @@
 # 29 nodos aislados que Joern clasifica internamente como parte del CFG
 #
 - name: generic_all_cfg_nodes
-  joern: cpg.all.filter(n => n.outE("CFG").hasNext || n.inE("CFG").hasNext)
+  joern: >
+    cpg.all.filter(n => 
+      n.outE("CFG").hasNext || n.inE("CFG").hasNext
+    )
   cypher: MATCH (n)-[r:CFG]->(m) RETURN n, m;
 
 - name: generic_all_ast_nodes
   joern: cpg.astNode
   cypher: MATCH (n)-[r:AST]->(m) RETURN n, m;
+
+- name: generic_all_ifStatements_nodes
+  joern: cpg.method.controlStructure.controlStructureType("IF").distinct
+  cypher: >
+    MATCH (n)
+    WHERE n.CONTROL_STRUCTURE_TYPE = "IF"
+    RETURN n;
 
 - name: generic_methods_with_param_count_1
   joern: cpg.method.filter(_.parameter.size == 1)

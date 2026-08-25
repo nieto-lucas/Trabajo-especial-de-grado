@@ -37,7 +37,7 @@ MERGE (r)-[:RET_TO_CALL]->(c);
 MATCH (c:CALL)-[:CALL]->(callee:METHOD)
 WHERE callee.IS_EXTERNAL = false
 
-MATCH (c)-[:AST]->(arg)
+MATCH (c)-[:ARGUMENT]->(arg)
 WHERE arg.ARGUMENT_INDEX > 0
 
 MATCH (callee)-[:AST]->(p:METHOD_PARAMETER_IN)
@@ -52,7 +52,7 @@ MERGE (arg)-[:ARG_TO_PARAM]->(p);
 
 // (a) Obtiene llamadas a free en funciones que liberan campos de structs no el 
 // struct entero
-MATCH (freeOfStructField:CALL)-[:AST]->(fieldAccess:CALL)
+MATCH (freeOfStructField:CALL)-[:ARGUMENT]->(fieldAccess:CALL)
 WHERE freeOfStructField.METHOD_FULL_NAME = "free"
     AND fieldAccess.ARGUMENT_INDEX = 1
     AND fieldAccess.NAME =~ "<operator>.*[fF]ieldAccess.*"
@@ -74,9 +74,9 @@ MATCH (fieldAccess)-[:AST]->(struct)
             MATCH (method:METHOD)-[:CONTAINS]->(struct)
 
             MATCH (method)-[:AST*]->(call:CALL)
-            WHERE call.NAME IN [".*free", "memset", "bzero"]
+            WHERE call.NAME IN [".*free$", "memset", "bzero"]
 
-            MATCH (call)-[:AST]->(firstArg)
+            MATCH (call)-[:ARGUMENT]->(firstArg)
             WHERE firstArg.ARGUMENT_INDEX = 1
                 AND firstArg.CODE = struct.CODE
         }

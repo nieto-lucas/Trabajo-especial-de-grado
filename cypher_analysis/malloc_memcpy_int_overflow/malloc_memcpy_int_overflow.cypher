@@ -29,7 +29,7 @@ MERGE (r)-[:RET_TO_CALL]->(c);
 MATCH (c:CALL)-[:CALL]->(callee:METHOD)
 WHERE callee.IS_EXTERNAL = false
 
-MATCH (c)-[:AST]->(arg)
+MATCH (c)-[:ARGUMENT]->(arg)
 WHERE arg.ARGUMENT_INDEX > 0
 
 MATCH (callee)-[:AST]->(p:METHOD_PARAMETER_IN)
@@ -42,21 +42,18 @@ MERGE (arg)-[:ARG_TO_PARAM]->(p);
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Llamadas a malloc que en su argumento tienen operaciones aritmeticas 
-MATCH (sourceCall: CALL)
+MATCH (sourceCall:CALL)-[:ARGUMENT]->(sourceArg:CALL)
 WHERE sourceCall.METHOD_FULL_NAME =~ ".*malloc$"
-    AND EXISTS {
-        MATCH (sourceCall)-[:AST]->(sourceArg)
-        WHERE sourceArg.ARGUMENT_INDEX = 1
-            AND sourceArg.NAME IN [
-                "<operator>.addition",
-                "<operator>.subtraction",
-                "<operator>.multiplication",
-                "<operator>.division"
-            ]
-    }
+    AND sourceArg.ARGUMENT_INDEX = 1
+    AND sourceArg.NAME IN [
+        "<operator>.addition",
+        "<operator>.subtraction",
+        "<operator>.multiplication",
+        "<operator>.division"
+    ]
 
 // (b) Llamada a memcpy donde llegan al primer argumento flujo desde malloc
-MATCH (sinkCall: CALL)-[:AST]->(firstSinkArg)
+MATCH (sinkCall: CALL)-[:ARGUMENT]->(firstSinkArg)
 WHERE sinkCall.METHOD_FULL_NAME =~ "(?i)memcpy"
     AND firstSinkArg.ARGUMENT_INDEX = 1
     AND EXISTS {
@@ -64,10 +61,10 @@ WHERE sinkCall.METHOD_FULL_NAME =~ "(?i)memcpy"
     }
     // El tercer argumento de la llamada a memcpy debe ser distinto al de malloc
     AND NOT EXISTS {
-        MATCH (sinkCall)-[:AST]->(thridSinkArg)
+        MATCH (sinkCall)-[:ARGUMENT]->(thridSinkArg)
         WHERE thridSinkArg.ARGUMENT_INDEX = 3
         
-        MATCH (sourceCall)-[:AST]->(sourceArg)
+        MATCH (sourceCall)-[:ARGUMENT]->(sourceArg)
         WHERE sourceArg.ARGUMENT_INDEX = 1
             AND sourceArg.CODE = thridSinkArg.CODE
     }

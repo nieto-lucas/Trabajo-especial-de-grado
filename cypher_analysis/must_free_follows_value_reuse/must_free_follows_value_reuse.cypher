@@ -26,11 +26,11 @@
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Obtiene llamadas a free donde se liberan valores que son reusados sin            //
-// reasignación. Emula la query CPGQL de arriba.                                    //
+// reasignación en todos los caminos. Emula la query CPGQL de arriba.               //
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Obtiene el ćodigo de las llamadas a funciones free
-MATCH (sourceCall:CALL)-[:AST]->(freedIdentifier:IDENTIFIER)
+MATCH (sourceCall:CALL)-[:ARGUMENT]->(freedIdentifier:IDENTIFIER)
 WHERE sourceCall.METHOD_FULL_NAME =~ "(.*_)?free"
     AND freedIdentifier.ARGUMENT_INDEX = 1
 WITH sourceCall, freedIdentifier.CODE AS freedIdentifierCode

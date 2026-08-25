@@ -16,7 +16,7 @@ MERGE (r)-[:RET_TO_CALL]->(c);
 MATCH (c:CALL)-[:CALL]->(callee:METHOD)
 WHERE callee.IS_EXTERNAL = false
 
-MATCH (c)-[:AST]->(arg)
+MATCH (c)-[:ARGUMENT]->(arg)
 WHERE arg.ARGUMENT_INDEX > 0
 
 MATCH (callee)-[:AST]->(p:METHOD_PARAMETER_IN)
@@ -42,11 +42,11 @@ WITH buffer, declaredSize
 
 // (b) Obtiene llamadas de la forma memcpy(dst, src, n), donde n es un entero y 
 // dst es un buffer de tamaño fijo
-MATCH (sinkCall:CALL)-[:AST]->(accessSizeArg:LITERAL)
+MATCH (sinkCall:CALL)-[:ARGUMENT]->(accessSizeArg:LITERAL)
 WHERE sinkCall.METHOD_FULL_NAME IN ["memcpy", "strncpy"]
     AND accessSizeArg.ARGUMENT_INDEX = 3
 
-MATCH (sinkCall)-[:AST]->(dstArg:IDENTIFIER)
+MATCH (sinkCall)-[:ARGUMENT]->(dstArg:IDENTIFIER)
 WHERE dstArg.ARGUMENT_INDEX = 1
     AND EXISTS {
         MATCH (buffer)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(dstArg)

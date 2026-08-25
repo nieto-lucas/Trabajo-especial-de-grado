@@ -42,5 +42,9 @@ Este repositorio contiene código y herrmientas para realizar comparaciones entr
 
 ## TO DO:
 
+- [] Implementar análisis para CVE-2022-36372
+- [] Agregar un README por cada carpeta de analisis con un resumen del mismo.
+- [] Implementar un programa en Rust para correr todos los análisis o uno solo.
+- [] Ver si puedo obtener ejemplos reales de funciones para los CVE de UEFI usando efiSeek y Ghidra. 
 - [] Setear la configuración para tests también desde un archivo .yml
 - [] Obtener los resultados completos de queries para así permitir consultas con avg, count, etc, e inclusive poder comparar aristas (ahí parece haber discrepancias entre Joern y Cypher)

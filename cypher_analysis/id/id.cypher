@@ -5,7 +5,6 @@ MATCH (c:CALL)-[:CALL]->(callee:METHOD)-[:CONTAINS]->(r:RETURN)
 WHERE callee.IS_EXTERNAL = false
 MERGE (r)-[:RET_TO_CALL]->(c);
 
-
 //////////////////////////////////////////////////////////////////////////////////////
 // Obtiene funciones identidad.                                                     //
 //////////////////////////////////////////////////////////////////////////////////////
@@ -28,8 +27,10 @@ WHERE m.IS_EXTERNAL = false
             OR bad:METHOD_PARAMETER_IN                  // el parametro (propio o del callee)
             OR bad:RETURN                               // return de un callee inlineado
             OR bad:METHOD                               // ruido del nodo de entrada
-            OR EXISTS { MATCH (bad)-[:CALL]->(q:METHOD)
-                      WHERE q.IS_EXTERNAL = false }     // llamada inlineable
+            OR EXISTS { 
+                MATCH (bad)-[:CALL]->(q:METHOD)
+                WHERE q.IS_EXTERNAL = false 
+            }                                           // llamada inlineable
         )
     }
 
