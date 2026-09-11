@@ -24,38 +24,44 @@ WHERE p.INDEX = arg.ARGUMENT_INDEX
 MERGE (arg)-[:ARG_TO_PARAM]->(p);
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Obtiene las llamadas a memcpy o strncpy que toman como argumento de destino un   //
-// buffer de tamaño fijo menor al tamaño accedido                                   //
+// Obtiene las llamadas a memcpy o strncpy que toman como argumento de destino u    //
+// origen un buffer de tamaño fijo menor al tamaño accedido                         //
 //////////////////////////////////////////////////////////////////////////////////////
 
-// (a) Obtiene los buffers de tamaño fijo
-MATCH (buffer:IDENTIFIER)
-WHERE buffer.CODE =~ ".*\\[\\d+\\]"
+// (a) Obtenemos los datos de incialización de un buffer estatico
+MATCH (m:METHOD)-[:CONTAINS]->(assign:CALL)-[:AST]->(alloc:CALL)-[:AST]->(allocSize:LITERAL)
+WHERE assign.METHOD_FULL_NAME = "<operator>.assignment"
+    AND alloc.METHOD_FULL_NAME = "<operator>.alloc"
 
-WITH buffer,
-    split(buffer.CODE, '[')[1] AS afterBracket
-WITH buffer, afterBracket,
-    split(afterBracket, ']')[0] AS sizeStr
-WITH buffer, sizeStr,
-    toInteger(sizeStr) AS declaredSize
-WITH buffer, declaredSize
+MATCH (assign)-[:AST]->(buf:IDENTIFIER)
+WHERE buf.ARGUMENT_INDEX = 1
 
-// (b) Obtiene llamadas de la forma memcpy(dst, src, n), donde n es un entero y 
-// dst es un buffer de tamaño fijo
+// (b) Obtenemos llamadas a memcpy o strncpy para las que el tamaño accedido sea mayor
+// al del buffer
 MATCH (sinkCall:CALL)-[:ARGUMENT]->(accessSizeArg:LITERAL)
 WHERE sinkCall.METHOD_FULL_NAME IN ["memcpy", "strncpy"]
     AND accessSizeArg.ARGUMENT_INDEX = 3
 
-MATCH (sinkCall)-[:ARGUMENT]->(dstArg:IDENTIFIER)
-WHERE dstArg.ARGUMENT_INDEX = 1
-    AND EXISTS {
-        MATCH (buffer)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(dstArg)
-    }
-
-// (c) Se queda solo con las llamadas para las que el buffer de destino tiene un 
-// tamaño menor al accedido 
-WITH sinkCall, declaredSize, 
+WITH m, sinkCall, buf,
+    toInteger(allocSize.CODE) AS declaredSize, 
     toInteger(accessSizeArg.CODE) AS accessSize
 WHERE accessSize > declaredSize
 
-RETURN sinkCall.CODE AS sink, declaredSize, accessSize;
+// (c) Nos quedamos con los buffers y llamadas tal que el primero llega alcanza al
+// argumento de destino u origen del segundo
+MATCH (sinkCall)-[:ARGUMENT]->(dstArg:IDENTIFIER)
+WHERE dstArg.ARGUMENT_INDEX IN [1, 2]
+    AND EXISTS {
+        MATCH p = (buf)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(dstArg)
+        WITH dstArg, relationships(p)[-1] AS lastRel
+        WITH dstArg, lastRel.VARIABLE AS taintedVar
+        WHERE dstArg.CODE = taintedVar
+    }
+
+RETURN DISTINCT 
+  m.NAME AS fn,
+  buf.CODE AS source,
+  declaredSize,
+  sinkCall.CODE AS sink,
+  accessSize
+ORDER BY fn;
