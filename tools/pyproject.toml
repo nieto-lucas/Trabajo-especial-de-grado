@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tesis_tools"
+version = "0.1.0"
+dependencies = [
+    "neo4j==6.2.0",
+    "pytz==2026.3.post1",
+    "PyYAML==6.0.3"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["lib*"]

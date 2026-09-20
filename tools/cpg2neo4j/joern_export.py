@@ -1,4 +1,4 @@
-import sys 
+import sys
 import shutil
 import subprocess
 from pathlib import Path
@@ -15,8 +15,14 @@ def export_cpg(joern_export_bin: Path, cpg_file: Path, export_dir: Path) -> None
         shutil.rmtree(export_dir)
     # Corre `joern-export` con formato neo4jcsv
     cmd = [
-        str(joern_export_bin), str(cpg_file),
-        "--repr", "all", "--format", "neo4jcsv", "--out", str(export_dir)
+        str(joern_export_bin),
+        str(cpg_file),
+        "--repr",
+        "all",
+        "--format",
+        "neo4jcsv",
+        "--out",
+        str(export_dir),
     ]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:

@@ -1,0 +1,10 @@
+neo4j:
+    database: neo4j
+    uri: bolt://localhost:7687
+    user: neo4j
+    password: neo4j123
+
+cpg2neo4j:
+    neo4j_admin_bin: "/usr/bin/neo4j-admin"
+    joern_export_bin: "/usr/local/bin/joern-export"
+    export_dir: "./.export"
