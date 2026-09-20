@@ -41,11 +41,11 @@ EFI_STATUS bad_GetVariable() { /*DETECTA*/
     gRT->GetVariable(L"Setting1", &guid, 0, &DataSize, buffer1);
     gRT->GetVariable(L"Setting2", &guid, 0, &DataSize, buffer2);
     return 0;
-}   
+}
 
 EFI_STATUS good_GetVariable_reasign() { /*NO DETECTA*/   
     size_t DataSize = 20;
-    gRT->GetVariable(L"Setting1", &guid, 0, &DataSize, buffer1);
+    gRT->GetVariable(L"Setting1", &guid, 0, &DataSize, buffer1);    
     DataSize = 20;
     gRT->GetVariable(L"Setting2", &guid, 0, &DataSize, buffer2);
     return 0;

@@ -66,10 +66,6 @@ WHERE sinkDataSizeArg.ARGUMENT_INDEX = 1
                 WHERE n.METHOD_FULL_NAME = "<operator>.assignment" 
                     AND t.ARGUMENT_INDEX = 1
                     AND t.CODE = sinkDataSizeArg.CODE
-        
-                MATCH (n)-[:AST]->(s)
-                WHERE s.ARGUMENT_INDEX = 2 
-                    AND s.CODE <> srcDataSizeArg.CODE
             }
         )
     }

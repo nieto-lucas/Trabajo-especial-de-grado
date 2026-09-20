@@ -47,49 +47,56 @@ MERGE (arg)-[:ARG_TO_PARAM]->(p);
 //////////////////////////////////////////////////////////////////////////////////////
 // Obtiene el campo de un puntero a un struct que es liberado con un free, pero no  //
 // se reasigna el todos los caminos de la función donde es llamada. Emula la query  //
-// CPGQL de arriba.                                                                 // 
+// CPGQL de arriba.                                                                 //
 //////////////////////////////////////////////////////////////////////////////////////
 
-// (a) Obtiene llamadas a free en funciones que liberan campos de structs no el 
+// (a) Obtiene llamadas a free en funciones que liberan campos de structs no el
 // struct entero
 MATCH (freeOfStructField:CALL)-[:ARGUMENT]->(fieldAccess:CALL)
-WHERE freeOfStructField.METHOD_FULL_NAME = "free"
-    AND fieldAccess.ARGUMENT_INDEX = 1
-    AND fieldAccess.NAME =~ "<operator>.*[fF]ieldAccess.*"
+WHERE
+  freeOfStructField.METHOD_FULL_NAME = "free" AND
+  fieldAccess.ARGUMENT_INDEX = 1 AND
+  fieldAccess.NAME =~ "<operator>.*[fF]ieldAccess.*"
 
 MATCH (fieldAccess)-[:AST]->(struct)
-    WHERE struct.ARGUMENT_INDEX = 1
-        // La llamada a free de la forma free(p->a_field) debe tener el struct p como
-        // parametro de la función que contiene la llamada
-        AND EXISTS {
-            MATCH (method:METHOD)-[:CONTAINS]->(sourceArg)
+WHERE
+  struct.ARGUMENT_INDEX = 1
+  // La llamada a free de la forma free(p->a_field) debe tener el struct p como
+  // parametro de la función que contiene la llamada
+  AND
+  EXISTS {
+    MATCH (method:METHOD)-[:CONTAINS]->(sourceArg)
 
-            MATCH (method)-[:AST]->(param:METHOD_PARAMETER_IN)
-            WHERE param.NAME = struct.CODE
-        }
-        // En la función que llama a free(p->a_field) no ocurre NINGUNA llamada a una 
-        // función que libere o setee en 0 todos los campos de un struct p. Por ej. 
-        // no ocurre free(p)), memset(p, ...) y/o bzero(p, ...)
-        AND NOT EXISTS {
-            MATCH (method:METHOD)-[:CONTAINS]->(struct)
+    MATCH (method)-[:AST]->(param:METHOD_PARAMETER_IN)
+    WHERE param.NAME = struct.CODE
+  }
+  // En la función que llama a free(p->a_field) no ocurre NINGUNA llamada a una
+  // función que libere o setee en 0 todos los campos de un struct p. Por ej.
+  // no ocurre free(p)), memset(p, ...) y/o bzero(p, ...)
+  AND
+  NOT EXISTS {
+    MATCH (method:METHOD)-[:CONTAINS]->(struct)
 
-            MATCH (method)-[:AST*]->(call:CALL)
-            WHERE call.NAME IN [".*free$", "memset", "bzero"]
+    MATCH (method)-[:AST*]->(call:CALL)
+    WHERE call.NAME IN [".*free$", "memset", "bzero"]
 
-            MATCH (call)-[:ARGUMENT]->(firstArg)
-            WHERE firstArg.ARGUMENT_INDEX = 1
-                AND firstArg.CODE = struct.CODE
-        }
+    MATCH (call)-[:ARGUMENT]->(firstArg)
+    WHERE firstArg.ARGUMENT_INDEX = 1 AND firstArg.CODE = struct.CODE
+  }
 
-// (b) Obtiene el campo del struct liberado si hay un camino donde no se redefine  
+// (b) Obtiene el campo del struct liberado si hay un camino donde no se redefine
 WITH fieldAccess
-WHERE EXISTS {
+WHERE
+  EXISTS {
     MATCH (method:METHOD)-[:CONTAINS]->(fieldAccess)
 
     MATCH (method)-[:AST]->(methodReturn:METHOD_RETURN)
-    WHERE EXISTS {
-        MATCH (fieldAccess)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(methodReturn)
-    }
-}
+    WHERE
+      EXISTS {
+        MATCH
+          (fieldAccess)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->
+          (methodReturn)
+      }
+  }
 
 RETURN DISTINCT fieldAccess;

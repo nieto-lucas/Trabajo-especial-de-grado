@@ -4,7 +4,7 @@
 // ({
 //      val src =
 //      cpg.method(".*malloc$").callIn.where(_.argument(1).arithmetic).l
-// 
+//
 //      cpg.method("(?i)memcpy").callIn.l.filter { memcpyCall =>
 //      memcpyCall
 //          .argument(1)
@@ -14,7 +14,6 @@
 //          .hasNext
 //      }
 // }).l
-// 
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Permite hacer inlining de funciones y sus valores de retorno (llamarse una vez). //
@@ -41,41 +40,43 @@ MERGE (arg)-[:ARG_TO_PARAM]->(p);
 // Emula la query CPGQL de arriba.                                                  //
 //////////////////////////////////////////////////////////////////////////////////////
 
-// (a) Llamadas a malloc que en su argumento tienen operaciones aritmeticas 
+// (a) Llamadas a malloc que en su argumento tienen operaciones aritmeticas
 MATCH (sourceCall:CALL)-[:ARGUMENT]->(sourceArg:CALL)
-WHERE sourceCall.METHOD_FULL_NAME =~ ".*malloc$"
-    AND sourceArg.ARGUMENT_INDEX = 1
-    AND sourceArg.NAME IN [
-        "<operator>.addition",
-        "<operator>.subtraction",
-        "<operator>.multiplication",
-        "<operator>.division"
-    ]
+WHERE
+  sourceCall.METHOD_FULL_NAME =~ ".*malloc$" AND
+  sourceArg.ARGUMENT_INDEX = 1 AND
+  sourceArg.NAME IN [
+    "<operator>.addition",
+    "<operator>.subtraction",
+    "<operator>.multiplication",
+    "<operator>.division"
+  ]
 
 // (b) Llamada a memcpy donde llegan al primer argumento flujo desde malloc
-MATCH (sinkCall: CALL)-[:ARGUMENT]->(firstSinkArg)
-WHERE sinkCall.METHOD_FULL_NAME =~ "(?i)memcpy"
-    AND firstSinkArg.ARGUMENT_INDEX = 1
-    AND EXISTS {
-        MATCH (sourceCall)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(firstSinkArg)
-    }
-    // El tercer argumento de la llamada a memcpy debe ser distinto al de malloc
-    AND NOT EXISTS {
-        MATCH (sinkCall)-[:ARGUMENT]->(thridSinkArg)
-        WHERE thridSinkArg.ARGUMENT_INDEX = 3
-        
-        MATCH (sourceCall)-[:ARGUMENT]->(sourceArg)
-        WHERE sourceArg.ARGUMENT_INDEX = 1
-            AND sourceArg.CODE = thridSinkArg.CODE
-    }
-    // El flujo de malloc que recibe memcpy debe ser desde una asignación  
-    AND EXISTS {
-        MATCH (assignmentCall)-[:AST*]->(sourceCall)
-        WHERE assignmentCall.NAME = "<operator>.assignment"
-        
-        MATCH (assignmentCall)-[:AST]->(target)
-        WHERE target.ARGUMENT_INDEX = 1
-            AND target.CODE = firstSinkArg.CODE
-    }
+MATCH (sinkCall:CALL)-[:ARGUMENT]->(firstSinkArg)
+WHERE
+  sinkCall.METHOD_FULL_NAME =~ "(?i)memcpy" AND
+  firstSinkArg.ARGUMENT_INDEX = 1 AND
+  EXISTS {
+    MATCH (sourceCall)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(firstSinkArg)
+  }
+  // El tercer argumento de la llamada a memcpy debe ser distinto al de malloc
+  AND
+  NOT EXISTS {
+    MATCH (sinkCall)-[:ARGUMENT]->(thridSinkArg)
+    WHERE thridSinkArg.ARGUMENT_INDEX = 3
+
+    MATCH (sourceCall)-[:ARGUMENT]->(sourceArg)
+    WHERE sourceArg.ARGUMENT_INDEX = 1 AND sourceArg.CODE = thridSinkArg.CODE
+  }
+  // El flujo de malloc que recibe memcpy debe ser desde una asignación
+  AND
+  EXISTS {
+    MATCH (assignmentCall)-[:AST*]->(sourceCall)
+    WHERE assignmentCall.NAME = "<operator>.assignment"
+
+    MATCH (assignmentCall)-[:AST]->(target)
+    WHERE target.ARGUMENT_INDEX = 1 AND target.CODE = firstSinkArg.CODE
+  }
 
 RETURN DISTINCT sinkCall;
