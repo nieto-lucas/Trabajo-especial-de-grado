@@ -73,6 +73,14 @@ tools/
 │   ├── main.py
 │   └── neo4j_admin.py
 |
+├── c_generator/
+|   ├── c_analysis.py
+|   ├── c_grows.py
+|   ├── c_seed.py
+|   ├── c_transform.py
+|   ├── main.py
+|   └── getenv_to_strcpy.c
+|
 ├── lib/
 │   ├── __init__.py
 │   └── neo4j.py
@@ -119,6 +127,44 @@ neo4j start
 ```bash
 python main.py --config config.yaml
 ```
+
+## `tools/c_generator`
+
+Script para crear archivos C a partir de un archivo base expandiendolo de forma similar a un L-Sistema pero con una regla de produción fija:
+
+- Las funciones terminales, es decir, aquellas que no llaman a otra función en su `return`, por cada expansión reciben copias del resto del resto de nodos del grafo de llamadas.
+
+Por ej. consideremos el siguiente programa con su respectivo grafo de llamadas.
+
+- Archivo base:
+
+![alt text](/imgs/image-1.png)
+
+- 1º expansión:
+
+![alt text](/imgs/image-2.png)
+
+![alt text](/imgs/image-3.png)
+
+### 1) Crear un archivo .c base
+
+> Consultar [getenv_to_strcpy.c](/tools/c_generator/getenv_to_strcpy.c) para referencia de como construir un archivo base de patrones de vulnerabilidades
+
+### 2) Correr el programa:
+
+```bash
+python main.py seed.c -r root -n 2
+```
+
+> Para consultar opciones de ejecución agregar el flag `-h` 
+
+### Limitaciones:
+
+- El archivo base no debe tener ningún tipo de directiva de preprocesador: `#define`, `#include`, ...
+
+- Si se quiere generar un archivo C bien formado, depende de que se escriba correctamente el archivo base y se incorporen los headers necesarios mediante el flag `-i`. Actualmente no soporta la generación de cualquier otra directiva que no sean `#include`s.
+
+- Actualmente depende de indicar una función root de forma explicita que no necesariamente debe serlo, es decir, pueden indicarse que una función es root cuando en realidad tiene más funciones que le llaman y por ende globalmente al archivo no debería ser root.
 
 ## TO DO:
 
