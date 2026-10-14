@@ -5,14 +5,7 @@ from lib.neo4j import Neo4jClient
 BATCH_SIZE = 200
 
 # Propiedades que conservar en el AST de la sentencia
-KEEP_PROPS = {
-    "_type",
-    "CODE",
-    "NAME",
-    "TYPE_FULL_NAME",
-    "ARGUMENT_INDEX",
-    "ORDER"
-}
+KEEP_PROPS = ["_type", "CODE", "NAME", "TYPE_FULL_NAME", "ARGUMENT_INDEX", "ORDER"]
 
 # Relaciones que entran o salen del los nodos AST de la sentencia y deben
 # preservarse y redirigirse entre ellas
@@ -23,18 +16,17 @@ def compress_cpg(db: Neo4jClient) -> None:
     """
     Post-procesa un CPG con el esquema de Joern para obtener un grafo similar
     al de QVoG, es decir, se comprime la representación original colocando en cada
-    nodo CALL su respectivo AST como un string JSON en la popiedad AST_JSON, 
+    nodo CALL su respectivo AST como un string JSON en la popiedad AST_JSON,
     reconectando las aristas entrantes y salientes del AST.
 
     Args:
         db (Neo4jClient): instancia de una DB Neo4j lista para ser usada
 
-    ## Note:
-
-    La función se compone de una serie de pasos atómicos que procesan por batches 
-    el CPG para obtener el mejor rendimiento posible en proyectos grandes. Sin embargo, 
-    esto permite que cualquier etapa de compresión pueda fallar y dejar la DB 
-    en un estado incosistente, en dicho caso se debe volver a cargar el CPG en Neo4j. 
+    ## Note
+    La función se compone de una serie de pasos atómicos que procesan por batches
+    el CPG para obtener el mejor rendimiento posible en proyectos grandes. Sin embargo,
+    esto permite que cualquier etapa de compresión pueda fallar y dejar la DB
+    en un estado incosistente, en dicho caso se debe volver a cargar el CPG en Neo4j.
     """
     print("Comprimiendo el CPG ...")
 
@@ -42,20 +34,25 @@ def compress_cpg(db: Neo4jClient) -> None:
         print("Agregando AST_JSON a llamadas ...")
         _add_ast_json_calls(db)
 
-        print("Redirigiendo arista salientes en nodos LITERAL o IDENTIFIER afectados ...")
+        print(
+            "Redirigiendo arista salientes en nodos LITERAL \
+              o IDENTIFIER afectados ..."
+        )
         _redirect_in_rels(db)
 
-        print("Redirigiendo aristas entrantes en nodos LITERAL o IDENTIFIER afectados ...")
+        print(
+            "Redirigiendo aristas entrantes en nodos LITERAL \
+              o IDENTIFIER afectados ..."
+        )
         _redirect_out_rels(db)
 
         print("Eliminando nodos LITERAL o IDENTIFIER internos del AST_JSON ...")
         _delete_internals(db)
-    
-        print("Listo.")
 
     except Exception as e:
         print(f"\nERROR durante compresión: {e}")
         print("\nLa base de datos quedo en un estado incosistente")
+
 
 def _add_ast_json_calls(db: Neo4jClient) -> None:
     # Query para obtener el AST de una llamada a función
@@ -70,11 +67,9 @@ def _add_ast_json_calls(db: Neo4jClient) -> None:
     records = db.read(query_get_call_ast)
 
     updates = []
-    for r in records:
-        updates.append({
-            "eid": r["eid"],
-            "ast_json": json.dumps(_filter_tree(r["ast_call"]))
-        })
+    for record in records:
+        tree = _filter_tree(record["ast_call"])
+        updates.append({"eid": record["eid"], "ast_json": json.dumps(tree)})
 
     # Query para setear el AST dentro del nodo llamada a función
     query_set_ast_json = """
@@ -89,6 +84,7 @@ def _filter_tree(node: dict) -> dict:
     filtered = {prop: val for prop, val in node.items() if prop in KEEP_PROPS}
     if "AST" in node:
         filtered["AST"] = [_filter_tree(child) for child in node["AST"]]
+
     return filtered
 
 
@@ -106,7 +102,9 @@ def _redirect_in_rels(db: Neo4jClient) -> None:
                 }
 
             WITH call, external, type(r) AS relType, properties(r) AS props
-            CALL apoc.merge.relationship(external, relType, props, props, call, {})
+            CALL apoc.merge.relationship(
+                external, relType, props, props, call, {}
+            )
             YIELD rel
 
             FINISH
@@ -129,7 +127,9 @@ def _redirect_out_rels(db: Neo4jClient) -> None:
                 }
         
             WITH call, external, type(r) AS relType, properties(r) AS props
-            CALL apoc.merge.relationship(call, relType, props, props, external, {})
+            CALL apoc.merge.relationship(
+                call, relType, props, props, external, {}
+            )
             YIELD rel
 
             FINISH
