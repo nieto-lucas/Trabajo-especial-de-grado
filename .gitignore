@@ -1,18 +1,15 @@
-# Entorno virutal y python
-.env
-*__pycache__
-
-# Directorio default para debugin de equivalencias
-compare_queries/.joern_equiv
-
+__pycache__/
+*.egg-info/
+.venv/
+.env/
+.vscode/
+build/
 # Workspace joern
 *workspace
-
-.vscode
-
+# Directorio default para debugin de equivalencias
+tools/compare_queries/.joern_equiv
 # Directorio default para exportar CPG as neo4jcsv
-cpg2neo4j/.export
-
+tools/cpg2neo4j/.export
 # Base de datos de grafo CPG generadas con joern-parse
 .cpgs
 

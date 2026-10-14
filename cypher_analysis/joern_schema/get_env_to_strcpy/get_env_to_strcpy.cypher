@@ -33,7 +33,7 @@ MERGE (arg)-[:ARG_TO_PARAM]->(param);
 MATCH (src:CALL)
 WHERE src.METHOD_FULL_NAME = "getenv"
 
-MATCH (m:METHOD)-[:CONTAINS]->(sink:CALL)-[:ARGUMENT]->(sinkArg)
+MATCH (sink:CALL)-[:ARGUMENT]->(sinkArg)
 WHERE
   sink.METHOD_FULL_NAME = "strcpy" AND
   sinkArg.ARGUMENT_INDEX = 2 AND
@@ -41,7 +41,9 @@ WHERE
     MATCH (src)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(sinkArg)
   }
 
-RETURN DISTINCT
+MATCH (m:METHOD)-[:CONTAINS]->(sink)
+
+RETURN
   m.NAME AS vulnerableFn,
   src.CODE AS srcCode,
   src.LINE_NUMBER AS srcLine,
