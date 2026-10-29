@@ -16,32 +16,12 @@
 // }).l
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Permite hacer inlining de funciones y sus valores de retorno (llamarse una vez). //
-//////////////////////////////////////////////////////////////////////////////////////
-MATCH (c:CALL)-[:CALL]->(callee:METHOD)-[:CONTAINS]->(r:RETURN)
-WHERE callee.IS_EXTERNAL = false
-MERGE (r)-[:RET_TO_CALL]->(c);
-
-//////////////////////////////////////////////////////////////////////////////////////
-// Comunica argumentos con parametros de funciones (llamarse una vez).              //
-//////////////////////////////////////////////////////////////////////////////////////
-MATCH (c:CALL)-[:CALL]->(callee:METHOD)
-WHERE callee.IS_EXTERNAL = false
-
-MATCH (c)-[:ARGUMENT]->(arg)
-WHERE arg.ARGUMENT_INDEX > 0
-
-MATCH (callee)-[:AST]->(p:METHOD_PARAMETER_IN)
-WHERE p.INDEX = arg.ARGUMENT_INDEX
-MERGE (arg)-[:ARG_TO_PARAM]->(p);
-
-//////////////////////////////////////////////////////////////////////////////////////
 // Obtiene las llamadas a memcpy que le llega flujo desde una llamada a malloc      //
 // Emula la query CPGQL de arriba.                                                  //
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Llamadas a malloc que en su argumento tienen operaciones aritmeticas
-MATCH (sourceCall:CALL)-[:ARGUMENT]->(sourceArg:CALL)
+MATCH (sourceCall:CALL_NODE)-[:ARGUMENT]->(sourceArg:CALL_NODE)
 WHERE
   sourceCall.METHOD_FULL_NAME =~ ".*malloc$" AND
   sourceArg.ARGUMENT_INDEX = 1 AND
@@ -53,7 +33,7 @@ WHERE
   ]
 
 // (b) Llamada a memcpy donde llegan al primer argumento flujo desde malloc
-MATCH (sinkCall:CALL)-[:ARGUMENT]->(firstSinkArg)
+MATCH (sinkCall:CALL_NODE)-[:ARGUMENT]->(firstSinkArg)
 WHERE
   sinkCall.METHOD_FULL_NAME =~ "(?i)memcpy" AND
   firstSinkArg.ARGUMENT_INDEX = 1 AND
@@ -63,20 +43,22 @@ WHERE
   // El tercer argumento de la llamada a memcpy debe ser distinto al de malloc
   AND
   NOT EXISTS {
-    MATCH (sinkCall)-[:ARGUMENT]->(thridSinkArg)
-    WHERE thridSinkArg.ARGUMENT_INDEX = 3
-
-    MATCH (sourceCall)-[:ARGUMENT]->(sourceArg)
-    WHERE sourceArg.ARGUMENT_INDEX = 1 AND sourceArg.CODE = thridSinkArg.CODE
+    MATCH (sinkCall)-[:ARGUMENT]->(thridSinkArg),
+          (sourceCall)-[:ARGUMENT]->(sourceArg)
+    WHERE 
+      thridSinkArg.ARGUMENT_INDEX = 3 AND
+      sourceArg.ARGUMENT_INDEX = 1 AND 
+      sourceArg.CODE = thridSinkArg.CODE
   }
   // El flujo de malloc que recibe memcpy debe ser desde una asignación
   AND
   EXISTS {
-    MATCH (assignmentCall)-[:AST*]->(sourceCall)
-    WHERE assignmentCall.NAME = "<operator>.assignment"
-
-    MATCH (assignmentCall)-[:AST]->(target)
-    WHERE target.ARGUMENT_INDEX = 1 AND target.CODE = firstSinkArg.CODE
+    MATCH (assignmentCall)-[:AST*]->(sourceCall),
+          (assignmentCall)-[:AST]->(target)
+    WHERE 
+      assignmentCall.NAME = "<operator>.assignment" AND
+      target.ARGUMENT_INDEX = 1 AND 
+      target.CODE = firstSinkArg.CODE
   }
 
 RETURN DISTINCT sinkCall;

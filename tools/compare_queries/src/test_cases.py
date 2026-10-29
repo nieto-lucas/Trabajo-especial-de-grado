@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import yaml
 
+
 @dataclass(frozen=True)
 class TestCase:
     name: str
@@ -11,6 +12,7 @@ class TestCase:
     @staticmethod
     def from_yaml_entry(entry: dict) -> "TestCase":
         return TestCase(**entry)
+
 
 def load_tests(path: Path) -> list[TestCase]:
     with open(path, encoding="utf-8") as file:

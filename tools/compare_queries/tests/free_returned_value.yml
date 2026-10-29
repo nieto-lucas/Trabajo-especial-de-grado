@@ -1,0 +1,91 @@
+- name: free_returned_value
+
+  joern: >
+    ({
+      def outParams =
+          cpg.parameter
+              .code(".+\\*.+")
+              .whereNot(
+                  _.referencingIdentifiers
+                  .argumentIndex(1)
+                  .inCall
+                  .nameExact(Operators.assignment, Operators.addressOf)
+              )
+
+      def assignedValues =
+        outParams.referencingIdentifiers
+          .argumentIndex(1)
+          .inCall
+          .nameExact(
+            Operators.indirectFieldAccess, 
+            Operators.indirection, 
+            Operators.indirectIndexAccess
+          )
+          .argumentIndex(1)
+          .inCall
+          .nameExact(Operators.assignment)
+          .argument(2)
+          .isIdentifier
+
+      def freeAssigned =
+        assignedValues.map(id =>
+          (
+            id,
+            id.refsTo
+            .flatMap {
+              case p: MethodParameterIn => p.referencingIdentifiers
+              case v: Local             => v.referencingIdentifiers
+            }
+            .inCall
+            .name("(.*_)?free")
+          )
+        )
+
+      freeAssigned
+        .filter { case (id, freeCall) =>
+          freeCall.dominatedBy.exists(_ == id)
+        }
+        .flatMap(_._1)
+    }).l
+
+  cypher: >
+    MATCH (refOutParam:IDENTIFIER)-[:REF]->(outParam:METHOD_PARAMETER_IN)
+    WHERE
+      outParam.CODE =~ ".+\\*.+" AND
+      refOutParam.ARGUMENT_INDEX = 1 AND
+      NOT EXISTS {
+        MATCH (callRefOutParam:CALL_NODE)-[:AST]->(refOutParam)
+        WHERE
+          callRefOutParam.NAME IN ["<operator>.assignment", "<operator>.addressOf"]
+      }
+
+    MATCH (callRefOutParam:CALL_NODE)-[:AST]->(refOutParam)
+    WHERE
+      callRefOutParam.NAME IN [
+        "<operator>.indirectFieldAccess",
+        "<operator>.indirection",
+        "<operator>.indirectIndexAccess"
+      ] AND
+      callRefOutParam.ARGUMENT_INDEX = 1
+
+    MATCH (assignCall:CALL_NODE)-[:AST]->(callRefOutParam)
+    WHERE assignCall.NAME = "<operator>.assignment"
+
+    MATCH (assignCall)-[:AST]->(assignValue:IDENTIFIER)
+    WHERE assignValue.ARGUMENT_INDEX = 2
+
+    MATCH (assignValue)-[:REF]->(refTo)
+    WHERE label(refTo) IN ["METHOD_PARAMETER_IN", "LOCAL"] 
+
+    MATCH (refAssignValue:IDENTIFIER)-[:REF]->(refTo)
+    MATCH (freeCall:CALL_NODE)-[:AST]->(refAssignValue)
+    WHERE freeCall.NAME =~ "(.*_)?free"
+
+    WITH assignValue, freeCall
+    WHERE
+      EXISTS {
+        MATCH (domNode)-[:DOMINATE* SHORTEST]->(freeCall)
+        WHERE domNode.id = assignValue.id
+      }
+
+    RETURN assignValue;

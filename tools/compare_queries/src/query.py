@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Iterable
 
+
 @dataclass(frozen=True)
 class QueryResult:
     ids: frozenset[Decimal]

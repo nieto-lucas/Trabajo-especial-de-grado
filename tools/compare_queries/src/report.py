@@ -1,9 +1,10 @@
+import ladybug as lb
 from dataclasses import dataclass
-from neo4j import Driver
 
 from cypher import exec_cypher_query
 from query import QueryResult
 from test_cases import TestCase
+
 
 @dataclass(frozen=True)
 class TestOutCome:
@@ -23,9 +24,11 @@ class TestOutCome:
     def only_on_cypher(self) -> QueryResult:
         return self.cypher_result.diff_result(self.joern_result)
 
+
 def cmp_cypher(
     tests: list[TestCase], 
-    joern_results: dict[TestCase, QueryResult], driver: Driver
+    joern_results: dict[TestCase, QueryResult], 
+    conn: lb.Connection,
 ) -> list[TestOutCome]:
     """Compara los resultados de una query en Joern con los resultados de la query en cypher
     para el mismo tests
@@ -34,19 +37,22 @@ def cmp_cypher(
         - tests (list): Lista de test a comparar
         - joern_results (dict): Diccionario donde a cada test le corresponde un resultado a su
         consulta en Joern
-        - driver (Driver): Driver para establecer una conexion con una instancia de Neo4j
+        - conn (lb.Connection): Driver para establecer una conexion con una instancia de Neo4j
     
     Return:
         Lista de resultados con en nombre del test y los ids obtenidos en Cypher y Joern
     """
     outcomes = []
-    with driver.session() as session:
-        for test in tests:
-            joern_result = joern_results[test]
-            cypher_result = exec_cypher_query(session, test)
-            outcomes.append(
-                TestOutCome(test, joern_result=joern_result, cypher_result=cypher_result)
+    for test in tests:
+        joern_result = joern_results[test]
+        cypher_result = exec_cypher_query(conn, test)
+        outcomes.append(
+            TestOutCome(
+                test, 
+                joern_result=joern_result, 
+                cypher_result=cypher_result
             )
+        )
 
     return outcomes
 

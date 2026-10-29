@@ -56,14 +56,14 @@ WHERE
   outParam.CODE =~ ".+\\*.+" AND
   refOutParam.ARGUMENT_INDEX = 1 AND
   NOT EXISTS {
-    MATCH (callRefOutParam:CALL)-[:AST]->(refOutParam)
+    MATCH (callRefOutParam:CALL_NODE)-[:AST]->(refOutParam)
     WHERE
       callRefOutParam.NAME IN ["<operator>.assignment", "<operator>.addressOf"]
   }
 
 // (b) Obtiene varaibles que se asignan a desreferencias del parametro puntero
 // anterior. Por ej. x tal que *p = x
-MATCH (callRefOutParam:CALL)-[:AST]->(refOutParam)
+MATCH (callRefOutParam:CALL_NODE)-[:AST]->(refOutParam)
 WHERE
   callRefOutParam.NAME IN [
     "<operator>.indirectFieldAccess",
@@ -72,7 +72,7 @@ WHERE
   ] AND
   callRefOutParam.ARGUMENT_INDEX = 1
 
-MATCH (assignCall:CALL)-[:AST]->(callRefOutParam)
+MATCH (assignCall:CALL_NODE)-[:AST]->(callRefOutParam)
 WHERE assignCall.NAME = "<operator>.assignment"
 
 // (c) Verifica si la variable a la que apunta el parametro puntero es liberada
@@ -81,16 +81,16 @@ MATCH (assignCall)-[:AST]->(assignValue:IDENTIFIER)
 WHERE assignValue.ARGUMENT_INDEX = 2
 
 MATCH (assignValue)-[:REF]->(refTo)
-WHERE refTo:METHOD_PARAMETER_IN OR refTo:LOCAL
+WHERE label(refTo) IN ["METHOD_PARAMETER_IN", "LOCAL"]
 
 MATCH (refAssignValue:IDENTIFIER)-[:REF]->(refTo)
-MATCH (freeCall:CALL)-[:AST]->(refAssignValue)
+MATCH (freeCall:CALL_NODE)-[:AST]->(refAssignValue)
 WHERE freeCall.NAME =~ "(.*_)?free"
 
 WITH assignValue, freeCall
 WHERE
   EXISTS {
-    MATCH (domNode)-[:DOMINATE*]->(freeCall)
+    MATCH (domNode)-[:DOMINATE* SHORTEST]->(freeCall)
     WHERE domNode = assignValue
   }
 

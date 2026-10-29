@@ -1,0 +1,22 @@
+- name: getenv_to_strcpy
+  
+  joern: >
+    ({
+      def source = cpg.call.methodFullName("getenv")
+      def sink = cpg.call.methodFullName("strcpy").argument(2)
+      sink.reachableBy(source).l
+    }).l
+
+  cypher: >
+    MATCH (src:CALL_NODE)
+    WHERE src.METHOD_FULL_NAME = "getenv"
+
+    MATCH (sink:CALL_NODE)-[:ARGUMENT]->(sinkArg)
+    WHERE
+      sink.METHOD_FULL_NAME = "strcpy" AND
+      sinkArg.ARGUMENT_INDEX = 2 AND
+      EXISTS {
+        MATCH (src)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM* SHORTEST]->(sinkArg)
+      }
+
+    RETURN sinkArg;

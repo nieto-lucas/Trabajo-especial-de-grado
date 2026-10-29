@@ -4,35 +4,15 @@
 // strncpy en buffers de tamaño fijo.
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Permite hacer inlining de funciones y sus valores de retorno (llamarse una vez). //
-//////////////////////////////////////////////////////////////////////////////////////
-MATCH (call:CALL)-[:CALL]->(callee:METHOD)-[:CONTAINS]->(ret:RETURN)
-WHERE callee.IS_EXTERNAL = false
-MERGE (ret)-[:RET_TO_CALL]->(call);
-
-//////////////////////////////////////////////////////////////////////////////////////
-// Comunica argumentos con parametros de funciones (llamarse una vez).              //
-//////////////////////////////////////////////////////////////////////////////////////
-MATCH (call:CALL)-[:CALL]->(callee:METHOD)
-WHERE callee.IS_EXTERNAL = false
-
-MATCH (call)-[:ARGUMENT]->(arg)
-WHERE arg.ARGUMENT_INDEX > 0
-
-MATCH (callee)-[:AST]->(param:METHOD_PARAMETER_IN)
-WHERE param.INDEX = arg.ARGUMENT_INDEX
-MERGE (arg)-[:ARG_TO_PARAM]->(param);
-
-//////////////////////////////////////////////////////////////////////////////////////
 // Obtiene las llamadas a memcpy o strncpy que toman como argumento de destino u    //
 // origen un buffer de tamaño fijo menor al tamaño accedido                         //
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Obtenemos los datos de incialización de un buffer estatico
-MATCH (method:METHOD)-[:CONTAINS]->(assign:CALL)
+MATCH (method:METHOD)-[:CONTAINS]->(assign:CALL_NODE)
 WHERE assign.METHOD_FULL_NAME = "<operator>.assignment"
 
-MATCH (assign)-[:AST]->(alloc:CALL)-[:AST]->(allocSize:LITERAL)
+MATCH (assign)-[:AST]->(alloc:CALL_NODE)-[:AST]->(allocSize:LITERAL)
 WHERE alloc.METHOD_FULL_NAME = "<operator>.alloc"
 
 MATCH (assign)-[:AST]->(buf:IDENTIFIER)
@@ -40,7 +20,7 @@ WHERE buf.ARGUMENT_INDEX = 1
 
 // (b) Obtenemos llamadas a memcpy o strncpy para las que el tamaño accedido sea mayor
 // al del buffer
-MATCH (sinkCall:CALL)-[:ARGUMENT]->(accessSizeArg:LITERAL)
+MATCH (sinkCall:CALL_NODE)-[:ARGUMENT]->(accessSizeArg:LITERAL)
 WHERE
   sinkCall.METHOD_FULL_NAME IN ["memcpy", "strncpy"] AND
   accessSizeArg.ARGUMENT_INDEX = 3
@@ -60,7 +40,7 @@ WHERE
   dstArg.ARGUMENT_INDEX IN [1, 2] AND
   EXISTS {
     MATCH (buf)-[r:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(dstArg)
-    WITH dstArg, r[-1].VARIABLE AS taintedVar
+    WITH dstArg, last(r).VARIABLE AS taintedVar
     WHERE dstArg.CODE = taintedVar
   }
 

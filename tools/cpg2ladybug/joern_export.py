@@ -13,7 +13,7 @@ def export_cpg(joern_export_bin: Path, cpg_file: Path, export_dir: Path) -> None
     """
     if export_dir.exists():
         shutil.rmtree(export_dir)
-    # Corre `joern-export` con formato neo4jcsv
+    
     cmd = [
         str(joern_export_bin),
         str(cpg_file),

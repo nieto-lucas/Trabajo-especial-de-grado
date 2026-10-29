@@ -9,31 +9,31 @@
 //////////////////////////////////////////////////////////////////////////////////////
 // Permite hacer inlining de funciones y sus valores de retorno (llamarse una vez). //
 //////////////////////////////////////////////////////////////////////////////////////
-MATCH (call:CALL)-[:CALL]->(callee:METHOD)-[:CONTAINS]->(ret:RETURN)
+MATCH (call:CALL_NODE)-[:CALL]->(callee:METHOD)-[:CONTAINS]->(ret:RETURN)
 WHERE callee.IS_EXTERNAL = false
 MERGE (ret)-[:RET_TO_CALL]->(call);
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Comunica argumentos con parametros de funciones (llamarse una vez).              //
 //////////////////////////////////////////////////////////////////////////////////////
-MATCH (call:CALL)-[:CALL]->(callee:METHOD)
+MATCH (call:CALL_NODE)-[:CALL]->(callee:METHOD)
 WHERE callee.IS_EXTERNAL = false
 
 MATCH (call)-[:ARGUMENT]->(arg)
 WHERE arg.ARGUMENT_INDEX > 0
 
 MATCH (callee)-[:AST]->(param:METHOD_PARAMETER_IN)
-WHERE param.INDEX = arg.ARGUMENT_INDEX
+WHERE param.`INDEX` = arg.ARGUMENT_INDEX
 MERGE (arg)-[:ARG_TO_PARAM]->(param);
 
 //////////////////////////////////////////////////////////////////////////////////////
 // Obtiene las llamadas a getenv cuyo valor alcanza al segundo argumento de una     //
 // llamada a strcpy.                                                                //
 //////////////////////////////////////////////////////////////////////////////////////
-MATCH (src:CALL)
+MATCH (src:CALL_NODE)
 WHERE src.METHOD_FULL_NAME = "getenv"
 
-MATCH (sink:CALL)-[:ARGUMENT]->(sinkArg)
+MATCH (sink:CALL_NODE)-[:ARGUMENT]->(sinkArg)
 WHERE
   sink.METHOD_FULL_NAME = "strcpy" AND
   sinkArg.ARGUMENT_INDEX = 2 AND
@@ -51,3 +51,4 @@ RETURN
   sink.LINE_NUMBER AS sinkLine,
   sinkArg.CODE AS arg
 ORDER BY vulnerableFn;
+

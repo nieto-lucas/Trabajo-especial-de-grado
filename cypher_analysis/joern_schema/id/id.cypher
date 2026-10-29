@@ -1,11 +1,4 @@
 //////////////////////////////////////////////////////////////////////////////////////
-// Permite hacer inlining de funciones y sus valores de retorno (llamarse una vez). //
-//////////////////////////////////////////////////////////////////////////////////////
-MATCH (call:CALL)-[:CALL]->(callee:METHOD)-[:CONTAINS]->(ret:RETURN)
-WHERE callee.IS_EXTERNAL = false
-MERGE (ret)-[:RET_TO_CALL]->(call);
-
-//////////////////////////////////////////////////////////////////////////////////////
 // Obtiene funciones identidad.                                                     //
 //////////////////////////////////////////////////////////////////////////////////////
 MATCH (method:METHOD)-[:AST]->(param:METHOD_PARAMETER_IN)
@@ -20,7 +13,7 @@ WHERE
     MATCH (method)-[:CONTAINS]->(ret:RETURN)
     WHERE
       NOT EXISTS {
-        MATCH (param)-[:REACHING_DEF|RET_TO_CALL*]->(ret)
+        MATCH (param)-[:REACHING_DEF|RET_TO_CALL* SHORTEST]->(ret)
       }
   }
   // (b) NINGUN return recibe flujo de un nodo que no preserve el valor

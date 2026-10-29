@@ -56,7 +56,7 @@
 
 - name: generic_all_call_nodes
   joern: cpg.call
-  cypher: MATCH (n:CALL) RETURN n;
+  cypher: MATCH (n:CALL_NODE) RETURN n;
 
 - name: generic_all_type_nodes
   joern: cpg.typ
@@ -74,17 +74,6 @@
   joern: cpg.ret
   cypher: MATCH (n:RETURN) RETURN n;
 
-# Problema:
-#
-# No pude imitar cpg.cfgNode directamente, así que termine tratando de imitar Cypher
-# desde Joern. El problema radica en que Joern considera como nodos CFG algunos completamente
-# aislados
-#
-# Por ejemplo, con el archivo "foo.c":
-#
-# `cpg.cfgNode.filter(n => n.cfgNext.isEmpty && n.cfgPrev.isEmpty).length` da un total de 
-# 29 nodos aislados que Joern clasifica internamente como parte del CFG
-#
 - name: generic_all_cfg_nodes
   joern: >
     cpg.all.filter(n => 
@@ -94,19 +83,11 @@
 
 - name: generic_all_ast_nodes
   joern: cpg.astNode
-  cypher: MATCH (n)-[r:AST]->(m) RETURN n, m;
+  cypher: MATCH (n)-[:AST]->(m) RETURN n, m;
 
 - name: generic_all_ifStatements_nodes
   joern: cpg.method.controlStructure.controlStructureType("IF").distinct
   cypher: >
     MATCH (n)
     WHERE n.CONTROL_STRUCTURE_TYPE = "IF"
-    RETURN n;
-
-- name: generic_methods_with_param_count_1
-  joern: cpg.method.filter(_.parameter.size == 1)
-  cypher: >
-    MATCH (n:METHOD)-[:AST]->(m:METHOD_PARAMETER_IN)
-    WITH n, count(m) AS c
-    WHERE c = 1
     RETURN n;

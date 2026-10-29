@@ -10,32 +10,12 @@
 //
 
 //////////////////////////////////////////////////////////////////////////////////////
-// Permite hacer inlining de funciones y sus valores de retorno (llamarse una vez). //
-//////////////////////////////////////////////////////////////////////////////////////
-MATCH (c:CALL)-[:CALL]->(callee:METHOD)-[:CONTAINS]->(r:RETURN)
-WHERE callee.IS_EXTERNAL = false
-MERGE (r)-[:RET_TO_CALL]->(c);
-
-//////////////////////////////////////////////////////////////////////////////////////
-// Comunica argumentos con parametros de funciones (llamarse una vez).              //
-//////////////////////////////////////////////////////////////////////////////////////
-MATCH (c:CALL)-[:CALL]->(callee:METHOD)
-WHERE callee.IS_EXTERNAL = false
-
-MATCH (c)-[:ARGUMENT]->(arg)
-WHERE arg.ARGUMENT_INDEX > 0
-
-MATCH (callee)-[:AST]->(p:METHOD_PARAMETER_IN)
-WHERE p.INDEX = arg.ARGUMENT_INDEX
-MERGE (arg)-[:ARG_TO_PARAM]->(p);
-
-//////////////////////////////////////////////////////////////////////////////////////
 // Análisis para detección de buffer overflow modelado a partir del CVE-2022-35407. //
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Obtiene una llamada a GetVariable de la forma: 
 // gBT->GetVariable(..., ..., ..., &DataSize, ...)
-MATCH (sourceCall:CALL)-[:ARGUMENT]->(srcDataSizeRef:CALL)
+MATCH (sourceCall:CALL_NODE)-[:ARGUMENT]->(srcDataSizeRef:CALL_NODE)
 WHERE srcDataSizeRef.ARGUMENT_INDEX = 4
     AND sourceCall.METHOD_FULL_NAME = "<operator>.pointerCall"
     AND sourceCall.CODE =~ ".*->GetVariable.*"
@@ -46,7 +26,7 @@ WHERE srcDataSizeArg.ARGUMENT_INDEX = 1
 
 // (b) Obtiene una siguiente llamada a GetVariable tal que el argumento DataSize 
 // de la anterior alcanza la nueva sin una reasignación explicita antes
-MATCH (sinkCall:CALL)-[:ARGUMENT]->(sinkDataSizeRef:CALL)
+MATCH (sinkCall:CALL_NODE)-[:ARGUMENT]->(sinkDataSizeRef:CALL_NODE)
 WHERE sinkDataSizeRef.ARGUMENT_INDEX = 4
     AND sinkCall.METHOD_FULL_NAME = "<operator>.pointerCall"
     AND sinkCall.CODE =~ ".*->GetVariable.*"
@@ -56,13 +36,13 @@ WHERE sinkDataSizeRef.ARGUMENT_INDEX = 4
 MATCH (sinkDataSizeRef)-[:AST]->(sinkDataSizeArg:IDENTIFIER)
 WHERE sinkDataSizeArg.ARGUMENT_INDEX = 1
     AND EXISTS {
-        MATCH p = (srcDataSizeArg)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(sinkDataSizeArg)
+        MATCH p = (srcDataSizeArg)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM* SHORTEST]->(sinkDataSizeArg)
         // En NINGUN nodo del camino entre el srcDataSizeArg y sinkDataSizeArg del 
         // ocurre una asignación a sinkDataSizeArg que no sea srcDataSizeArg
         // (Trata de preveer casos donde se reestablece el cuarto arg entre llamadas) 
         WHERE none(n IN nodes(p) 
             WHERE EXISTS {
-                MATCH (n:CALL)-[:AST]->(t:IDENTIFIER)
+                MATCH (n:CALL_NODE)-[:AST]->(t:IDENTIFIER)
                 WHERE n.METHOD_FULL_NAME = "<operator>.assignment" 
                     AND t.ARGUMENT_INDEX = 1
                     AND t.CODE = sinkDataSizeArg.CODE
