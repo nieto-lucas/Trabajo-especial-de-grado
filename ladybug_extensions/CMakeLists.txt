@@ -14,8 +14,7 @@ if(NOT LBUG_SOURCE_DIR)
     include(FetchContent)
     FetchContent_Declare(lbug_src
         URL https://github.com/LadybugDB/ladybug/archive/refs/tags/v${LBUG_VERSION}.tar.gz
-        # URL_HASH SHA256=<hash>        # recomendado para builds reproducibles
-        SOURCE_SUBDIR no_cmake_aca      # descarga pero NO compila el motor
+        SOURCE_SUBDIR no_cmake_aca
         DOWNLOAD_EXTRACT_TIMESTAMP TRUE
     )
     FetchContent_MakeAvailable(lbug_src)
@@ -49,21 +48,22 @@ endif()
 
 message(STATUS "Compilando contra Ladybug v${LBUG_VERSION} (${LBUG_SOURCE_DIR})")
 
-add_library(arithmetic SHARED
-    src/loern_call_node.cpp
+add_library(loern SHARED
+    src/function/call_nodes.cpp
+    src/main/loern_extension.cpp
 )
 
-target_compile_features(arithmetic PRIVATE cxx_std_20)
+target_compile_features(loern PRIVATE cxx_std_20)
 
-target_include_directories(arithmetic PRIVATE
+target_include_directories(loern PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/include
     ${LBUG_SOURCE_DIR}/src/include
     ${LBUG_CFG_DIR}/src/include  
 )
 
-# Nombre final: libarithmetic.lbug_extension
-set_target_properties(arithmetic PROPERTIES
-    PREFIX "lib"
+# Nombre final: loern.lbug_extension
+set_target_properties(loern PROPERTIES
+    PREFFIX ""
     SUFFIX ".lbug_extension"
     CXX_EXTENSIONS OFF
     POSITION_INDEPENDENT_CODE ON

@@ -1,4 +1,4 @@
-#include "loern_call_node.hpp"
+#include "function/call_nodes.hpp"
 
 #include "common/api.h"
 #include "common/exception/binder.h"
@@ -14,7 +14,7 @@ using namespace lbug::common;
 using namespace lbug::function;
 
 namespace lbug {
-namespace loern_call_node {
+namespace loern_extension {
 
 static constexpr const char* PROPERTY = "NAME";
 
@@ -68,39 +68,18 @@ static void execFunc(
     );
 }
 
-struct IsArithmeticFunction {
-    static constexpr const char* name = "is_arithmetic";
-
-    static function_set getFunctionSet() {
-        function_set set;
-        auto func = std::make_unique<ScalarFunction>(
-            name,
-            std::vector<LogicalTypeID>{LogicalTypeID::NODE}, 
-            LogicalTypeID::BOOL, 
-            execFunc
-        );
-        func->bindFunc = bindFunc;
-        set.push_back(std::move(func));
-        return set;
-    }
-};
-
-void LoernCallNode::load(main::ClientContext* context) {
-    auto& db = *context->getDatabase();
-    extension::ExtensionUtils::addScalarFunc<IsArithmeticFunction>(db);
+function_set IsArithmeticFunction::getFunctionSet() {
+    function_set set;
+    auto func = std::make_unique<ScalarFunction>(
+        name,
+        std::vector<LogicalTypeID>{LogicalTypeID::NODE}, 
+        LogicalTypeID::BOOL, 
+        execFunc
+    );
+    func->bindFunc = bindFunc;
+    set.push_back(std::move(func));
+    return set;
 }
 
-} // namespace arithmetic_extension
+} // namespace loern_extension
 } // namespace lbug
-
-extern "C" {
-
-LBUG_API void init(lbug::main::ClientContext* context) {
-    lbug::loern_call_node::LoernCallNode::load(context);
-}
-
-LBUG_API const char* name() {
-    return lbug::loern_call_node::LoernCallNode::EXTENSION_NAME;
-}
-
-}
