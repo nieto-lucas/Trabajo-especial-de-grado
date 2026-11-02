@@ -21,11 +21,11 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Llamadas a malloc que en su argumento tienen operaciones aritmeticas
-MATCH (sourceCall:CALL_NODE)-[:ARGUMENT]->(sourceArg:CALL_NODE)
+MATCH (srcCall:CALL_NODE)-[:ARGUMENT]->(srcArg:CALL_NODE)
 WHERE
-  sourceCall.METHOD_FULL_NAME =~ ".*malloc$" AND
-  sourceArg.ARGUMENT_INDEX = 1 AND
-  sourceArg.NAME IN [
+  srcCall.METHOD_FULL_NAME =~ ".*malloc$" AND
+  srcArg.ARGUMENT_INDEX = 1 AND
+  srcArg.NAME IN [
     "<operator>.addition",
     "<operator>.subtraction",
     "<operator>.multiplication",
@@ -38,25 +38,25 @@ WHERE
   sinkCall.METHOD_FULL_NAME =~ "(?i)memcpy" AND
   firstSinkArg.ARGUMENT_INDEX = 1 AND
   EXISTS {
-    MATCH (sourceCall)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(firstSinkArg)
+    MATCH (srcCall)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM* SHORTEST]->(firstSinkArg)
   }
   // El tercer argumento de la llamada a memcpy debe ser distinto al de malloc
   AND
   NOT EXISTS {
     MATCH (sinkCall)-[:ARGUMENT]->(thridSinkArg),
-          (sourceCall)-[:ARGUMENT]->(sourceArg)
+          (srcCall)-[:ARGUMENT]->(srcArg)
     WHERE 
       thridSinkArg.ARGUMENT_INDEX = 3 AND
-      sourceArg.ARGUMENT_INDEX = 1 AND 
-      sourceArg.CODE = thridSinkArg.CODE
+      srcArg.ARGUMENT_INDEX = 1 AND 
+      srcArg.CODE = thridSinkArg.CODE
   }
   // El flujo de malloc que recibe memcpy debe ser desde una asignación
   AND
   EXISTS {
-    MATCH (assignmentCall)-[:AST*]->(sourceCall),
-          (assignmentCall)-[:AST]->(target)
+    MATCH (assign:CALL_NODE)-[:AST* SHORTEST]->(srcCall),
+          (assign)-[:AST]->(target)
     WHERE 
-      assignmentCall.NAME = "<operator>.assignment" AND
+      assign.NAME = "<operator>.assignment" AND
       target.ARGUMENT_INDEX = 1 AND 
       target.CODE = firstSinkArg.CODE
   }

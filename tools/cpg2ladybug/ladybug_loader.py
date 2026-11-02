@@ -1,3 +1,4 @@
+"""Carga un CPG a partir de un directorio generado con `joern-export`"""
 from pathlib import Path
 
 import ladybug as lb
@@ -13,6 +14,8 @@ from neo4jcsv import (
 
 CSV_LOAD_CONFIG = "(HEADER=false, PARALLEL=false, DELIM=',')"
 
+# En el esquema de Joern CALL es una label de nodos y aristas, 
+# ladybug no permite esto
 NODE_LABEL_RENAME = {"CALL": "CALL_NODE"}
 
 LADYBUG_TYPES = {
@@ -26,7 +29,11 @@ LADYBUG_TYPES = {
 
 
 def load_cpg(conn: lb.Connection, export_dir: Path) -> None:
-    """
+    """ Carga un CPG exportado con `joern-export`
+
+    Args:
+        - conn(lb.Connection) conexión a DB ladybug
+        - export_dir(Path) directorio con archivos en formato neo4jcsv
     """
     node_csv_files = find_nodes_csv_files(export_dir)
     for node_csv in node_csv_files:
@@ -38,7 +45,9 @@ def load_cpg(conn: lb.Connection, export_dir: Path) -> None:
 
 
 def _load_nodes(conn: lb.Connection, node_csv: NodeCsvFile) -> None:
-    """ """
+    """ Carga los nodos de un archivo csv con modificaciones para ser 
+    compatible con ladybug DB
+    """
     table = NODE_LABEL_RENAME.get(node_csv.label, node_csv.label)
 
     columns = ["`id` INT64"]
@@ -61,7 +70,9 @@ def _load_nodes(conn: lb.Connection, node_csv: NodeCsvFile) -> None:
 
 
 def _load_edges(conn: lb.Connection, edge_csv: EdgeCsvFile) -> None:
-    """ """
+    """ Carga las aritas de un archivo csv con modificaciones para ser 
+        compatible con ladybug DB
+    """
     properties = [
         f"`{prop.name}` {_ladybug_type(prop)}" for prop in edge_csv.properties
     ]

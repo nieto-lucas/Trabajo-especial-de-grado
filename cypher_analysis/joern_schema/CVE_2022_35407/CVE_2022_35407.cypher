@@ -31,7 +31,7 @@ WHERE sinkDataSizeRef.ARGUMENT_INDEX = 4
     AND sinkCall.METHOD_FULL_NAME = "<operator>.pointerCall"
     AND sinkCall.CODE =~ ".*->GetVariable.*"
     AND sinkDataSizeRef.METHOD_FULL_NAME = "<operator>.addressOf"
-    AND sinkCall <> sourceCall
+    AND sinkCall.id <> sourceCall.id
 
 MATCH (sinkDataSizeRef)-[:AST]->(sinkDataSizeArg:IDENTIFIER)
 WHERE sinkDataSizeArg.ARGUMENT_INDEX = 1
@@ -40,12 +40,12 @@ WHERE sinkDataSizeArg.ARGUMENT_INDEX = 1
         // En NINGUN nodo del camino entre el srcDataSizeArg y sinkDataSizeArg del 
         // ocurre una asignación a sinkDataSizeArg que no sea srcDataSizeArg
         // (Trata de preveer casos donde se reestablece el cuarto arg entre llamadas) 
-        WHERE none(n IN nodes(p) 
+        WHERE none(assign IN nodes(p) 
             WHERE EXISTS {
-                MATCH (n:CALL_NODE)-[:AST]->(t:IDENTIFIER)
-                WHERE n.METHOD_FULL_NAME = "<operator>.assignment" 
-                    AND t.ARGUMENT_INDEX = 1
-                    AND t.CODE = sinkDataSizeArg.CODE
+                MATCH (assign:CALL_NODE)-[:AST]->(target:IDENTIFIER)
+                WHERE assign.METHOD_FULL_NAME = "<operator>.assignment" 
+                    AND target.ARGUMENT_INDEX = 1
+                    AND target.CODE = sinkDataSizeArg.CODE
             }
         )
     }

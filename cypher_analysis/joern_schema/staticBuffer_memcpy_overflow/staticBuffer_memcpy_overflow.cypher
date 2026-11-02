@@ -29,8 +29,8 @@ WITH
   method,
   sinkCall,
   buf,
-  toInteger(allocSize.CODE) AS declaredSize,
-  toInteger(accessSizeArg.CODE) AS accessSize
+  CAST(allocSize.CODE AS INT32) AS declaredSize,
+  CAST(accessSizeArg.CODE AS INT32) AS accessSize
 WHERE accessSize > declaredSize
 
 // (c) Nos quedamos con los buffers y llamadas tal que el primero llega alcanza al
@@ -39,9 +39,8 @@ MATCH (sinkCall)-[:ARGUMENT]->(dstArg:IDENTIFIER)
 WHERE
   dstArg.ARGUMENT_INDEX IN [1, 2] AND
   EXISTS {
-    MATCH (buf)-[r:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM*]->(dstArg)
-    WITH dstArg, last(r).VARIABLE AS taintedVar
-    WHERE dstArg.CODE = taintedVar
+    MATCH (buf)-[r:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM* SHORTEST]->(dstArg) 
+    WHERE dstArg.CODE = (rels(r)[-1]).VARIABLE
   }
 
 RETURN DISTINCT

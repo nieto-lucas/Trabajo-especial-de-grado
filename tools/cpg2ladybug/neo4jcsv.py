@@ -1,9 +1,11 @@
+"""Prepara archivos en formato neo4jcsv para poder ser cargados en Ladybug"""
 import csv
 from pathlib import Path
 from typing import Iterator
 from dataclasses import dataclass
 
 
+# Campos en primera linea de archivos neo4jcsv
 NODE_FIELDS = {":ID", ":LABEL"}
 
 EDGE_FIELDS = {":START_ID", ":END_ID", ":TYPE"}
@@ -36,6 +38,9 @@ class EdgeCsvFile(CsvFile):
 
 
 def find_nodes_csv_files(export_dir: Path) -> list[NodeCsvFile]:
+    """ A partir de header en el directorio generado con `joern-export`
+    obtiene info para construir y cargar tablas de nodos
+    """
     header_paths = sorted(export_dir.glob(f"nodes_*_header.csv"))
     
     if not header_paths:
@@ -63,6 +68,9 @@ def find_nodes_csv_files(export_dir: Path) -> list[NodeCsvFile]:
 
 
 def find_edges_csv_files(export_dir: Path) -> list[EdgeCsvFile]:
+    """ A partir de header en el directorio generado con `joern-export`
+    obtiene info para construir y cargar tablas de relaciones/aristas
+    """
     header_paths = sorted(export_dir.glob(f"edges_*_header.csv"))
     
     if not header_paths:

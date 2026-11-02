@@ -28,9 +28,9 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Obtiene llamadas a malloc y strncpy
-MATCH (sourceCall:CALL_NODE)-[:ARGUMENT]->(sourceArg)
-WHERE sourceCall.METHOD_FULL_NAME =~ ".*malloc$"
-    AND sourceArg.ARGUMENT_INDEX = 1
+MATCH (srcCall:CALL_NODE)-[:ARGUMENT]->(srcArg)
+WHERE srcCall.METHOD_FULL_NAME =~ ".*malloc$"
+    AND srcArg.ARGUMENT_INDEX = 1
 
 MATCH (method:METHOD)-[:CONTAINS]->(sinkCall:CALL_NODE)
 WHERE sinkCall.METHOD_FULL_NAME =~ "(?i)strncpy"
@@ -47,21 +47,22 @@ WITH method, dstArg, sizeArg
 // (c) El tamaño reservado al string que se copia es el mismo que lo copiado y no 
 // se agregan caracteres de términcación en la copia
 WHERE EXISTS {
-        MATCH (sourceArg)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM* SHORTEST]->(dstArg)
-        WHERE sourceArg.CODE = sizeArg.CODE
-    }
-    // NINGUNA asignación dentro de la función donde se llama a strncpy es de
-    // la forma: dst[some_size] = '\0'
-    AND NOT EXISTS {
-        MATCH (method)-[:CONTAINS]->(methodAssignment:CALL_NODE),
-              (methodAssignment)-[:AST]->(target:CALL_NODE),
-              (methodAssignment)-[:AST]->(source:LITERAL)
-        WHERE
-            methodAssignment.NAME = "<operator>.assignment"
-            AND target.NAME = "<operator>.indirectIndexAccess"
-            AND target.CODE =~ (dstArg.CODE + ".*\\[.*")
-            AND source.ARGUMENT_INDEX = 2
-            AND source.CODE =~ ".*0.*"
-    }
+    MATCH (srcArg)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM* SHORTEST]->(dstArg)
+    WHERE srcArg.CODE = sizeArg.CODE
+}
+// NINGUNA asignación dentro de la función donde se llama a strncpy es de
+// la forma: dst[some_size] = '\0'
+AND NOT EXISTS {
+    MATCH (method)-[:CONTAINS]->(assign:CALL_NODE),
+          (assign)-[:AST]->(target:CALL_NODE),
+          (assign)-[:AST]->(src:LITERAL)
+    WHERE
+        assign.NAME = "<operator>.assignment"
+        AND target.ARGUMENT_INDEX = 1
+        AND target.NAME = "<operator>.indirectIndexAccess"
+        AND target.CODE =~ (dstArg.CODE + ".*\\[.*")
+        AND src.ARGUMENT_INDEX = 2
+        AND src.CODE =~ ".*0.*"
+}
 
 RETURN DISTINCT dstArg;

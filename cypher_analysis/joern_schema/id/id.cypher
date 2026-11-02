@@ -19,17 +19,19 @@ WHERE
   // (b) NINGUN return recibe flujo de un nodo que no preserve el valor
   AND
   NOT EXISTS {
-    MATCH (method)-[:CONTAINS]->(ret:RETURN)
-    MATCH (bad)-[:REACHING_DEF|RET_TO_CALL*]->(ret)
+    MATCH (method)-[:CONTAINS]->(ret:RETURN),
+          (bad)-[:REACHING_DEF|RET_TO_CALL* SHORTEST]->(ret)
     WHERE
-      NOT (bad:IDENTIFIER OR        // renombres / usos
-        bad:METHOD_PARAMETER_IN OR  // el parametro (propio o del callee)
-        bad:RETURN OR               // return de un callee inlineado
-        bad:METHOD OR               // ruido del nodo de entrada
+      NOT label(bad) IN [
+        "IDENTIFIER",           // renombres / usos
+        "METHOD_PARAMETER_IN",  // el parametro (propio o del callee)
+        "RETURN",               // return de un callee inlineado
+        "METHOD"                // ruido del nodo de entrada
+      ] OR                      // llamada inlineable
         EXISTS {
           MATCH (bad)-[:CALL]->(q:METHOD)
           WHERE q.IS_EXTERNAL = false
-        })                          // llamada inlineable
+        }
   }
 
 RETURN DISTINCT method.NAME AS fn, param.NAME AS param

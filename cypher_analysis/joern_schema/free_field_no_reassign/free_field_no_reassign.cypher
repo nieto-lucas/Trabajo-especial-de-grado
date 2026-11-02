@@ -56,7 +56,7 @@ WHERE
   NOT EXISTS {
     MATCH (method:METHOD)-[:CONTAINS]->(struct),
           (method)-[:AST* SHORTEST]->(call:CALL_NODE),
-          (call)-[:ARGUMENT]->(fistArg)
+          (call)-[:ARGUMENT]->(firstArg)
     WHERE 
       call.NAME IN [".*free$", "memset", "bzero"] AND
       firstArg.ARGUMENT_INDEX = 1 AND 
@@ -67,9 +67,8 @@ WHERE
 WITH fieldAccess
 WHERE
   EXISTS {
-    MATCH (method:METHOD)-[:CONTAINS]->(fieldAccess)
-
-    MATCH (method)-[:AST]->(methodReturn:METHOD_RETURN)
+    MATCH (method:METHOD)-[:CONTAINS]->(fieldAccess),
+          (method)-[:AST]->(methodReturn:METHOD_RETURN)
     WHERE
       EXISTS {
         MATCH

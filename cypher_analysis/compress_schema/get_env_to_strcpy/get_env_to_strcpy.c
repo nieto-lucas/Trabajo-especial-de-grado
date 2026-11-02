@@ -1,1 +1,0 @@
-../../joern_schema/get_env_to_strcpy/get_env_to_strcpy.c
