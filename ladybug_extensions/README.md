@@ -8,16 +8,16 @@ Este directorio posee archivos para extender Cypher en LadyBug DB, por medio de 
 ladybug_extensions/
 ├── src/
 │  ├── function/
+│  │   ├── reachable_by.cpp
 │  │   └── call_nodes.cpp
 │  ├── include/
 │  │   ├── function/
+│  │   │   ├── reachable_by.hpp
 │  │   │   └── call_nodes.hpp
 │  │   └── main/
 │  │       └── loern_extension.hpp
 │  └── main/
 │      └── loern_extension.cpp
-│  
-├── build/
 │  
 └── CMakeLists.txt
 ```
@@ -45,6 +45,6 @@ Esto debería generar:
 
 | result</br>STRING                                                                           |
 |---------------------------------------------------------------------------------------------|
-| Extension: ruta/a/este/directorio/build/lib/libloern.lbug_extension has been loaded.        |
+| Extension: ruta/a/este/directorio/build/lib/loern.lbug_extension has been loaded.           |
 
 Las extensiones en LadyBug DB están ligadas al ciclo de vida de la sesión activa, fuera de ella debe volver a cargarse en cada ocasión

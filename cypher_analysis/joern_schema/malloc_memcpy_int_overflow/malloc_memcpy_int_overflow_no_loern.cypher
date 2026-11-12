@@ -33,31 +33,26 @@ WHERE
   ]
 
 // (b) Llamada a memcpy donde llegan al primer argumento flujo desde malloc
-MATCH (sinkCall:CALL_NODE)-[:ARGUMENT]->(firstSinkArg)
+MATCH (sinkCall:CALL_NODE)-[:ARGUMENT]->(firstSinkArg {ARGUMENT_INDEX: 1})
 WHERE
   sinkCall.METHOD_FULL_NAME =~ "(?i)memcpy" AND
-  firstSinkArg.ARGUMENT_INDEX = 1 AND
   EXISTS {
     MATCH (srcCall)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM* SHORTEST]->(firstSinkArg)
   }
   // El tercer argumento de la llamada a memcpy debe ser distinto al de malloc
   AND
   NOT EXISTS {
-    MATCH (sinkCall)-[:ARGUMENT]->(thridSinkArg),
+    MATCH (sinkCall)-[:ARGUMENT]->(thridSinkArg {ARGUMENT_INDEX: 3}),
           (srcCall)-[:ARGUMENT]->(srcArg)
-    WHERE 
-      thridSinkArg.ARGUMENT_INDEX = 3 AND
-      srcArg.ARGUMENT_INDEX = 1 AND 
-      srcArg.CODE = thridSinkArg.CODE
+    WHERE srcArg.CODE = thridSinkArg.CODE
   }
   // El flujo de malloc que recibe memcpy debe ser desde una asignación
   AND
   EXISTS {
     MATCH (assign:CALL_NODE)-[:AST* SHORTEST]->(srcCall),
-          (assign)-[:AST]->(target)
+          (assign)-[:AST]->(target {ARGUMENT_INDEX: 1})
     WHERE 
       assign.NAME = "<operator>.assignment" AND
-      target.ARGUMENT_INDEX = 1 AND 
       target.CODE = firstSinkArg.CODE
   }
 

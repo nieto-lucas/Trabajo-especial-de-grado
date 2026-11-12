@@ -29,50 +29,29 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Obtiene el ćodigo de las llamadas a funciones free
-MATCH (sourceCall:CALL)-[:ARGUMENT]->(freedIdentifier:IDENTIFIER)
-WHERE
-  sourceCall.METHOD_FULL_NAME =~ "(.*_)?free" AND
-  freedIdentifier.ARGUMENT_INDEX = 1
-WITH sourceCall, freedIdentifier.CODE AS freedIdentifierCode
+MATCH (freeCall:CALL_NODE)-[:ARGUMENT]->(freed:IDENTIFIER)
+WHERE 
+  freeCall.METHOD_FULL_NAME =~ "(.*_)?free" AND
+  freed.ARGUMENT_INDEX = 1
 
-// (b) Obtiene los nodos que post-dominan free (usan el valor liberado)
-MATCH (postDomNode)-[:POST_DOMINATE*]->(sourceCall)
-WITH sourceCall, freedIdentifierCode, collect(DISTINCT postDomNode) AS postDom
-
-// (c) Obtiene las variables liberadas que aparecen como reasignaciones en arbol
-// de post-dominancia
-WITH
-  sourceCall,
-  freedIdentifierCode,
-  postDom,
-  COLLECT {
-    UNWIND postDom AS pdNode
-    MATCH (assignCall:CALL)-[:AST]->(pdNode:IDENTIFIER)
+MATCH (use:IDENTIFIER)-[:POST_DOMINATE* SHORTEST]->(freeCall)
+WHERE 
+  use.CODE = freed.CODE AND
+  NOT EXISTS {
+    MATCH (assign1:CALL_NODE)-[:AST]->(use)
+    WHERE 
+      assign1.NAME = "<operator>.assignment" AND
+      use.ARGUMENT_INDEX = 1
+  }
+  AND
+  NOT EXISTS {
+    MATCH (assign2:CALL_NODE)-[:AST]->(reuse:IDENTIFIER),
+          (reuse)-[:POST_DOMINATE* SHORTEST]->(freeCall),
+          (use)-[:POST_DOMINATE* SHORTEST]->(reuse)
     WHERE
-      assignCall.NAME = "<operator>.assignment" AND
-      pdNode.ARGUMENT_INDEX = 1 AND
-      pdNode.CODE = freedIdentifierCode
-    RETURN DISTINCT pdNode
-  } AS reassignedIds
+      assign2.NAME = "<operator>.assignment" AND
+      reuse.ARGUMENT_INDEX = 1 AND
+      reuse.CODE = freed.CODE
+  }
 
-WITH
-  sourceCall,
-  freedIdentifierCode,
-  postDom,
-  reassignedIds,
-  reassignedIds +
-  COLLECT {
-    UNWIND reassignedIds AS rId
-    MATCH (rPdNode)-[:POST_DOMINATE*]->(rId)
-    RETURN DISTINCT rPdNode
-  } AS assignedPosDom
-
-// (d) Se queda solo con las llamadas a free con valores que no se reasignan
-UNWIND postDom AS candidate
-WITH sourceCall, freedIdentifierCode, assignedPosDom, candidate
-WHERE
-  "IDENTIFIER" IN labels(candidate) AND
-  candidate.CODE = freedIdentifierCode AND
-  NOT candidate IN assignedPosDom
-
-RETURN DISTINCT sourceCall;
+RETURN DISTINCT freeCall;

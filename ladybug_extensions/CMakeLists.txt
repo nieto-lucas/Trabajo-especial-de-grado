@@ -4,6 +4,12 @@ project(LoernArithmetic VERSION 1.0.0 LANGUAGES CXX)
 # Versión de Ladybug: DEBE coincidir con tu binario lbug (lbug --version).
 set(LBUG_VERSION "0.22.0" CACHE STRING "Versión de Ladybug contra la que se compila")
 
+set(SANITIZE "" CACHE STRING "Sanitizers a usar, ej: address,undefined o thread")
+if(SANITIZE)
+    add_compile_options(-fsanitize=${SANITIZE} -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=${SANITIZE})
+endif()
+
 # Checkout de ladybug en el MISMO tag que el binario lbug que vas a usar.
 set(
     LBUG_SOURCE_DIR "" 
@@ -20,6 +26,8 @@ if(NOT LBUG_SOURCE_DIR)
     FetchContent_MakeAvailable(lbug_src)
     set(LBUG_SOURCE_DIR "${lbug_src_SOURCE_DIR}")
 endif()
+
+set(LBUG_THIRD_PARTY "${LBUG_SOURCE_DIR}/third_party")
 
 if(
     NOT LBUG_SOURCE_DIR OR 
@@ -50,6 +58,7 @@ message(STATUS "Compilando contra Ladybug v${LBUG_VERSION} (${LBUG_SOURCE_DIR})"
 
 add_library(loern SHARED
     src/function/call_nodes.cpp
+    src/function/reachable_by.cpp
     src/main/loern_extension.cpp
 )
 
@@ -58,12 +67,13 @@ target_compile_features(loern PRIVATE cxx_std_20)
 target_include_directories(loern PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/include
     ${LBUG_SOURCE_DIR}/src/include
-    ${LBUG_CFG_DIR}/src/include  
+    ${LBUG_CFG_DIR}/src/include
+    ${LBUG_THIRD_PARTY}/alp/include
 )
 
 # Nombre final: loern.lbug_extension
 set_target_properties(loern PROPERTIES
-    PREFFIX ""
+    PREFIX ""
     SUFFIX ".lbug_extension"
     CXX_EXTENSIONS OFF
     POSITION_INDEPENDENT_CODE ON

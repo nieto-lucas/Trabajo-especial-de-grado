@@ -9,14 +9,12 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 // (a) Obtenemos los datos de incialización de un buffer estatico
-MATCH (method:METHOD)-[:CONTAINS]->(assign:CALL_NODE)
-WHERE assign.METHOD_FULL_NAME = "<operator>.assignment"
-
-MATCH (assign)-[:AST]->(alloc:CALL_NODE)-[:AST]->(allocSize:LITERAL)
-WHERE alloc.METHOD_FULL_NAME = "<operator>.alloc"
-
-MATCH (assign)-[:AST]->(buf:IDENTIFIER)
-WHERE buf.ARGUMENT_INDEX = 1
+MATCH (method:METHOD)-[:CONTAINS]->(assign:CALL_NODE),
+      (assign)-[:AST]->(alloc:CALL_NODE)-[:AST]->(allocSize:LITERAL),
+      (assign)-[:AST]->(buf:IDENTIFIER {ARGUMENT_INDEX: 1})
+WHERE 
+  assign.METHOD_FULL_NAME = "<operator>.assignment" AND
+  alloc.METHOD_FULL_NAME = "<operator>.alloc"
 
 // (b) Obtenemos llamadas a memcpy o strncpy para las que el tamaño accedido sea mayor
 // al del buffer

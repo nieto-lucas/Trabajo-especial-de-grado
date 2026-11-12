@@ -32,34 +32,29 @@
 
 // (a) Obtiene llamadas a free en funciones que liberan campos de structs no el
 // struct entero
-MATCH (freeOfStructField:CALL_NODE)-[:ARGUMENT]->(fieldAccess:CALL_NODE)
+MATCH (freeOfStructField:CALL_NODE)-[:ARGUMENT]->(fieldAccess:CALL_NODE),
+      (fieldAccess)-[:AST]->(struct {ARGUMENT_INDEX: 1})
 WHERE
   freeOfStructField.METHOD_FULL_NAME = "free" AND
   fieldAccess.ARGUMENT_INDEX = 1 AND
-  fieldAccess.NAME =~ "<operator>.*[fF]ieldAccess.*"
-
-MATCH (fieldAccess)-[:AST]->(struct)
-WHERE
-  struct.ARGUMENT_INDEX = 1
+  fieldAccess.NAME =~ "<operator>.*[fF]ieldAccess.*" AND
   // La llamada a free de la forma free(p->a_field) debe tener el struct p como
   // parametro de la función que contiene la llamada
-  AND
   EXISTS {
-    MATCH (method:METHOD)-[:CONTAINS]->(sourceArg),
+    MATCH (method:METHOD)-[:CONTAINS]->(struct),
           (method)-[:AST]->(param:METHOD_PARAMETER_IN)
     WHERE param.NAME = struct.CODE
   }
   // En la función que llama a free(p->a_field) no ocurre NINGUNA llamada a una
   // función que libere o setee en 0 todos los campos de un struct p. Por ej.
-  // no ocurre free(p)), memset(p, ...) y/o bzero(p, ...)
+  // no ocurre free(p), memset(p, ...) y/o bzero(p, ...)
   AND
   NOT EXISTS {
     MATCH (method:METHOD)-[:CONTAINS]->(struct),
-          (method)-[:AST* SHORTEST]->(call:CALL_NODE),
-          (call)-[:ARGUMENT]->(firstArg)
+          (method)-[:AST* SHORTEST]->(freeOfStruct:CALL_NODE),
+          (freeOfStruct)-[:ARGUMENT]->(firstArg {ARGUMENT_INDEX: 1})
     WHERE 
-      call.NAME IN [".*free$", "memset", "bzero"] AND
-      firstArg.ARGUMENT_INDEX = 1 AND 
+      freeOfStruct.NAME IN [".*free$", "memset", "bzero"] AND
       firstArg.CODE = struct.CODE
   }
 
@@ -69,12 +64,7 @@ WHERE
   EXISTS {
     MATCH (method:METHOD)-[:CONTAINS]->(fieldAccess),
           (method)-[:AST]->(methodReturn:METHOD_RETURN)
-    WHERE
-      EXISTS {
-        MATCH
-          (fieldAccess)-[:REACHING_DEF|RET_TO_CALL|ARG_TO_PARAM* SHORTEST]->
-          (methodReturn)
-      }
+    WHERE reachable_by(id(fieldAccess), id(methodReturn))
   }
 
 RETURN DISTINCT fieldAccess;
