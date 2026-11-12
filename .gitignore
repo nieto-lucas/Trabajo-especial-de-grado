@@ -8,10 +8,9 @@ build/
 *workspace
 # Directorio default para debugin de equivalencias
 tools/compare_queries/.joern_equiv
-# Directorio default para exportar CPG as neo4jcsv
-tools/cpg2neo4j/.export
+# Directorio default para exportar CPG como neo4jcsv
+tools/cpg2ladybug/.cpg_export
 # Base de datos de grafo CPG generadas con joern-parse
 .cpgs
 
-# Directorio target del plugin APOC-jq generado por Maeven
-plugins/jq/target
+ladybug_extensions/build*/

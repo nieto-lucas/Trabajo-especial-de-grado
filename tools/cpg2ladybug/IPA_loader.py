@@ -6,8 +6,6 @@ DEFAULT_PROP = "`id` INT64, PRIMARY KEY(`id`)"
 
 ARGUMENT_NODE_TYPES = ["LITERAL", "IDENTIFIER", "CALL_NODE"]
 
-IPA_NODE_TYPES = ["RETURN"] + ARGUMENT_NODE_TYPES
-
 
 def load_IPA(conn: lb.Connection) -> None:
     """ Construye relaciones entre los argumentos de las llamadas a funciones
@@ -17,14 +15,21 @@ def load_IPA(conn: lb.Connection) -> None:
     _load_default_schemas(conn)
     _load_ret_to_call(conn)
     _load_arg_to_param(conn)
-    
+
 
 def _load_default_schemas(conn: lb.Connection) -> None:
-    for node_type in IPA_NODE_TYPES:
-        conn.execute(f"""
-            CREATE NODE TABLE IF NOT EXISTS {node_type} (
-                {DEFAULT_PROP}
-            )""")
+    _create_node_table(conn, "RETURN")
+    for node_type in ARGUMENT_NODE_TYPES:
+        props = ["ARGUMENT_INDEX INT32"]
+        if node_type == "CALL_NODE":
+            props.append("IS_EXTERNAL BOOL")
+
+        _create_node_table(conn, node_type, props)
+
+
+def _create_node_table(conn, name: str, props: list[str] = []) -> None:
+    cols = ", ".join(["`id` INT64", *props, "PRIMARY KEY(`id`)"])
+    conn.execute(f"CREATE NODE TABLE IF NOT EXISTS {name} ({cols})")
 
 
 def _load_ret_to_call(conn: lb.Connection) -> None:
@@ -33,15 +38,13 @@ def _load_ret_to_call(conn: lb.Connection) -> None:
             FROM RETURN TO CALL_NODE
         )""")
 
-    # Si no hay (:METHOD)-[:CONTAINS]->(:RETURN) no crea nodos
-    if not _related_by(conn, 'CONTAINS', 'METHOD', 'RETURN'):
-        return
-    
-    conn.execute("""
+    match = """
         MATCH (call:CALL_NODE)-[:CALL]->(callee:METHOD)-[:CONTAINS]->(ret:RETURN)
         WHERE callee.IS_EXTERNAL = false
-        MERGE (ret)-[:RET_TO_CALL]->(call);
-    """)
+    """
+    # Si no hay match en la query de arriba, no crea nodos
+    if _has_matches(conn, match):
+        conn.execute(match + "MERGE (ret)-[:RET_TO_CALL]->(call);")
 
 
 def _load_arg_to_param(conn: lb.Connection) -> None:
@@ -53,11 +56,7 @@ def _load_arg_to_param(conn: lb.Connection) -> None:
         )""")
     
     for node_type in ARGUMENT_NODE_TYPES:
-        # Si no hay (:CALL_NODE)-[:ARGUMENT]->(:node_type) no crea nodos
-        if not _related_by(conn, 'ARGUMENT', 'CALL_NODE', node_type):
-            continue
-        
-        conn.execute(f"""
+        match = f"""
             MATCH (call:CALL_NODE)-[:CALL]->(callee:METHOD)
             WHERE callee.IS_EXTERNAL = false
 
@@ -66,15 +65,12 @@ def _load_arg_to_param(conn: lb.Connection) -> None:
 
             MATCH (callee)-[:AST]->(param:METHOD_PARAMETER_IN)
             WHERE param.`INDEX` = arg.ARGUMENT_INDEX
-            MERGE (arg)-[:ARG_TO_PARAM]->(param);
-        """)
+        """
+        # Si no hay match en la query de arriba, no crea nodos
+        if _has_matches(conn, match):
+            conn.execute(match + "MERGE (arg)-[:ARG_TO_PARAM]->(param);")
 
 
-def _related_by(conn: lb.Connection, rel: str, src: str, dst: str) -> bool:
-    relations = conn.execute(f"CALL SHOW_CONNECTION('{rel}') RETURN *")
-    while relations.has_next():
-        row = relations.get_next()
-        if src in row and dst in row:
-            return True
-
-    return False
+def _has_matches(conn: lb.Connection, subquery: str) -> bool:
+    result = conn.execute(f"{subquery} RETURN count(*) AS matches")
+    return result.get_next()[0] > 0
