@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.20)
-project(LoernArithmetic VERSION 1.0.0 LANGUAGES CXX)
+project(Loern VERSION 1.0.0 LANGUAGES CXX)
 
 # Versión de Ladybug: DEBE coincidir con tu binario lbug (lbug --version).
-set(LBUG_VERSION "0.22.0" CACHE STRING "Versión de Ladybug contra la que se compila")
+set(LBUG_VERSION "0.22.3" CACHE STRING "Versión de Ladybug contra la que se compila")
 
 set(SANITIZE "" CACHE STRING "Sanitizers a usar, ej: address,undefined o thread")
 if(SANITIZE)

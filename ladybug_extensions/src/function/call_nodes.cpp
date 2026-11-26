@@ -18,7 +18,6 @@ namespace loern_extension {
 
 static constexpr const char* PROPERTY = "NAME";
 
-// Lógica pura sobre el valor de la propiedad NAME.
 struct IsArithmeticOp {
     static void operation(string_t& input, bool& result) {
         const auto s = input.getAsString();
@@ -37,7 +36,7 @@ static std::unique_ptr<FunctionBindData> bindFunc(
     auto idx = StructType::getFieldIdx(nodeType, PROPERTY);
     if (idx == INVALID_STRUCT_FIELD_IDX) {
         throw BinderException(
-            std::string("is_arithmetic() requires a node with property ") + 
+            std::string("is_arithmetic require un nodo con propiedad ") + 
             PROPERTY
         );
     }

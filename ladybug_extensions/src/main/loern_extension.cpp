@@ -1,7 +1,6 @@
 #include "main/loern_extension.hpp"
 #include "function/call_nodes.hpp"
 #include "function/reachable_by.hpp"
-#include "function/dbg.hpp"
 
 #include "main/client_context.h"
 
@@ -14,6 +13,8 @@ void LoernExtension::load(main::ClientContext* context) {
     auto& db = *context->getDatabase();
     ExtensionUtils::addScalarFunc<IsArithmeticFunction>(db);
     ExtensionUtils::addScalarFunc<ReachableByFunction>(db);
+    ExtensionUtils::addScalarFuncAlias<ReachableByFwdFunction>(db);
+    ExtensionUtils::addScalarFunc<ReachableByBwdFunction>(db);
 }
 
 } // namespace loern_extension

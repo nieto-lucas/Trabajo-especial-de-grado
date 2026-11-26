@@ -10,5 +10,15 @@ struct ReachableByFunction {
     static function::function_set getFunctionSet();
 };
 
+struct ReachableByFwdFunction {
+    using alias = ReachableByFunction;
+    static constexpr const char *name = "reachable_by_fwd";
+};
+
+struct ReachableByBwdFunction {
+    static constexpr const char* name = "reachable_by_bwd";
+    static function::function_set getFunctionSet();
+};
+
 } // namespace loern_extension
 } // namespace lbug
